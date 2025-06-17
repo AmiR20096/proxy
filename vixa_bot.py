@@ -145,4 +145,6 @@ def callback_handler(call):
         internet_code = user_data[chat_id].get('internet', 'wifi')
         send_tutorial(chat_id, lang_code, internet_code)
 
+print("Bot is up and running...")
+
 bot.infinity_polling()
