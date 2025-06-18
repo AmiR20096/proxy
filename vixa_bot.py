@@ -245,7 +245,7 @@ def send_question(chat_id):
 
 if __name__ == "__main__":
     # دریافت آدرس وبهوک از متغیر محیطی WEBHOOK_URL
-    WEBHOOK_URL_BASE = os.getenv('https://myapp.onrender.com')
+    WEBHOOK_URL_BASE = os.getenv('https://vixa-bot.onrender.com')
     if not WEBHOOK_URL_BASE:
         print("لطفا متغیر محیطی WEBHOOK_URL را تنظیم کنید! (مثال: https://yourapp.onrender.com)")
         exit(1)
