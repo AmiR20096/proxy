@@ -5,9 +5,9 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import threading
 import time
 
-API_TOKEN = os.getenv('7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY')
+API_TOKEN = os.getenv("7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY")
 if not API_TOKEN:
-    print("لطفا متغیر محیطی TELEGRAM_API_TOKEN را تنظیم کنید!")
+    print("❌ خطا: متغیر محیطی TELEGRAM_API_TOKEN تنظیم نشده است. لطفاً توکن ربات را در تنظیمات هاست خود اضافه کنید.")
     exit(1)
 
 bot = telebot.TeleBot(API_TOKEN)
@@ -158,83 +158,86 @@ def callback_handler(call):
     chat_id = call.message.chat.id
     data = call.data
 
-    if data.startswith("lang_"):
-        lang_code = data.split("_")[1]
-        user_data[chat_id] = {'lang': lang_code}
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                              text={"fa":"زبان انتخاب شد! حالا موضوع رو انتخاب کن 🧐",
-                                    "en":"Language set! Now pick a subject 🧐",
-                                    "ar":"تم اختيار اللغة! اختر الموضوع 🧐"}[lang_code],
-                              reply_markup=subject_keyboard(lang_code))
-
-    elif data.startswith("subject_"):
-        subj = data.split("_")[1]
-        lang_code = user_data[chat_id]['lang']
-        user_data[chat_id].update({'subject': subj, 'lesson_index': 0, 'score': 0})
-        lessons = subjects[subj][lang_code]
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                              text={"fa":"شروع آموزش! درس اول:\n\n" + lessons[0],
-                                    "en":"Starting lessons! Lesson 1:\n\n" + lessons[0],
-                                    "ar":"بدء الدروس! الدرس ١:\n\n" + lessons[0]}[lang_code],
-                              reply_markup=lessons_keyboard(lang_code, lessons))
-
-    elif data.startswith("lesson_"):
-        lang_code = user_data[chat_id]['lang']
-        subj = user_data[chat_id]['subject']
-        idx = int(data.split("_")[1])
-        lessons = subjects[subj][lang_code]
-        if idx < len(lessons):
-            user_data[chat_id]['lesson_index'] = idx
+    try:
+        if data.startswith("lang_"):
+            lang_code = data.split("_")[1]
+            user_data[chat_id] = {'lang': lang_code}
             bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                                  text={"fa":f"درس {idx+1}:\n\n" + lessons[idx],
-                                        "en":f"Lesson {idx+1}:\n\n" + lessons[idx],
-                                        "ar":f"الدرس {idx+1}:\n\n" + lessons[idx]}[lang_code],
+                                  text={"fa":"زبان انتخاب شد! حالا موضوع رو انتخاب کن 🧐",
+                                        "en":"Language set! Now pick a subject 🧐",
+                                        "ar":"تم اختيار اللغة! اختر الموضوع 🧐"}[lang_code],
+                                  reply_markup=subject_keyboard(lang_code))
+
+        elif data.startswith("subject_"):
+            subj = data.split("_")[1]
+            lang_code = user_data[chat_id]['lang']
+            user_data[chat_id].update({'subject': subj, 'lesson_index': 0, 'score': 0})
+            lessons = subjects[subj][lang_code]
+            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
+                                  text={"fa":"شروع آموزش! درس اول:\n\n" + lessons[0],
+                                        "en":"Starting lessons! Lesson 1:\n\n" + lessons[0],
+                                        "ar":"بدء الدروس! الدرس ١:\n\n" + lessons[0]}[lang_code],
                                   reply_markup=lessons_keyboard(lang_code, lessons))
-        else:
-            bot.answer_callback_query(call.id, "هیچ درس جدیدی نیست! / No more lessons! / لا مزيد من الدروس!")
 
-    elif data == "start_questions":
-        lang_code = user_data[chat_id]['lang']
-        subj = user_data[chat_id]['subject']
-        user_data[chat_id]['q_index'] = 0
-        user_data[chat_id]['score'] = 0
-        send_question(chat_id)
+        elif data.startswith("lesson_"):
+            lang_code = user_data[chat_id]['lang']
+            subj = user_data[chat_id]['subject']
+            idx = int(data.split("_")[1])
+            lessons = subjects[subj][lang_code]
+            if idx < len(lessons):
+                user_data[chat_id]['lesson_index'] = idx
+                bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
+                                      text={"fa":f"درس {idx+1}:\n\n" + lessons[idx],
+                                            "en":f"Lesson {idx+1}:\n\n" + lessons[idx],
+                                            "ar":f"الدرس {idx+1}:\n\n" + lessons[idx]}[lang_code],
+                                      reply_markup=lessons_keyboard(lang_code, lessons))
+            else:
+                bot.answer_callback_query(call.id, "هیچ درس جدیدی نیست! / No more lessons! / لا مزيد من الدروس!")
 
-    elif data.startswith("answer_"):
-        lang_code = user_data[chat_id]['lang']
-        subj = user_data[chat_id]['subject']
-        q_idx = user_data[chat_id]['q_index']
-        selected = int(data.split("_")[1])
-        correct = questions[subj][lang_code][q_idx][2]
-
-        if selected == correct:
-            user_data[chat_id]['score'] += 1
-            bot.send_sticker(chat_id, stickers['correct'])
-            bot.answer_callback_query(call.id, "🙌 آفرین! درست زدی! / Correct! / صح! 🎉")
-        else:
-            bot.send_sticker(chat_id, stickers['wrong'])
-            bot.answer_callback_query(call.id, "🙈 اوووه، اشتباه شد! / Wrong! / خطأ! 😅")
-
-        user_data[chat_id]['q_index'] += 1
-        if user_data[chat_id]['q_index'] < len(questions[subj][lang_code]):
+        elif data == "start_questions":
+            lang_code = user_data[chat_id]['lang']
+            subj = user_data[chat_id]['subject']
+            user_data[chat_id]['q_index'] = 0
+            user_data[chat_id]['score'] = 0
             send_question(chat_id)
-        else:
-            score = user_data[chat_id]['score']
-            total = len(questions[subj][lang_code])
-            texts = {
-                'fa': f"🎉 تبریک! امتیاز شما: {score}/{total} 🎉\n\nمعلومه زرنگی 😉",
-                'en': f"🎉 Congrats! Your score: {score}/{total} 🎉\n\nYou’re smart 😉",
-                'ar': f"🎉 مبروك! نتيجتك: {score}/{total} 🎉\n\nأنت ذكي 😉"
-            }
-            bot.send_message(chat_id, texts[lang_code])
-            user_data.pop(chat_id, None)
+
+        elif data.startswith("answer_"):
+            lang_code = user_data[chat_id]['lang']
+            subj = user_data[chat_id]['subject']
+            q_idx = user_data[chat_id]['q_index']
+            selected = int(data.split("_")[1])
+            correct = questions[subj][lang_code][q_idx][2]
+
+            if selected == correct:
+                user_data[chat_id]['score'] += 1
+                bot.send_sticker(chat_id, stickers['correct'])
+                bot.answer_callback_query(call.id, "🙌 آفرین! درست زدی! / Correct! / صح! 🎉")
+            else:
+                bot.send_sticker(chat_id, stickers['wrong'])
+                bot.answer_callback_query(call.id, "🙈 اوووه، اشتباه شد! / Wrong! / خطأ! 😅")
+
+            user_data[chat_id]['q_index'] += 1
+            if user_data[chat_id]['q_index'] < len(questions[subj][lang_code]):
+                send_question(chat_id)
+            else:
+                score = user_data[chat_id]['score']
+                total = len(questions[subj][lang_code])
+                texts = {
+                    'fa': f"🎉 تبریک! امتیاز شما: {score}/{total} 🎉\n\nمعلومه زرنگی 😉",
+                    'en': f"🎉 Congrats! Your score: {score}/{total} 🎉\n\nYou’re smart 😉",
+                    'ar': f"🎉 مبروك! نتيجتك: {score}/{total} 🎉\n\nأنت ذكي 😉"
+                }
+                bot.send_message(chat_id, texts[lang_code])
+                user_data.pop(chat_id, None)
+    except Exception as e:
+        print(f"Error in callback_handler: {e}")
+        bot.answer_callback_query(call.id, "❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.")
 
 def send_question(chat_id):
     lang_code = user_data[chat_id]['lang']
     subj = user_data[chat_id]['subject']
     q_idx = user_data[chat_id]['q_index']
     q_text, options, _ = questions[subj][lang_code][q_idx]
-
     bot.send_message(chat_id, q_text, reply_markup=question_keyboard(lang_code, options))
 
 # Flask route فقط برای نگه داشتن اپ در رندر
@@ -248,13 +251,10 @@ def polling():
             bot.polling(none_stop=True)
         except Exception as e:
             print(f"Error in polling: {e}")
-            time.sleep(5)  # تاخیر در صورت بروز خطا
+            time.sleep(5)
 
 if __name__ == "__main__":
-    # اجرای polling در یک thread جداگانه
     polling_thread = threading.Thread(target=polling)
     polling_thread.start()
-
-    # اجرای وب‌سرور Flask روی پورت رندر
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
