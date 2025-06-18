@@ -6,6 +6,10 @@ from flask import Flask
 import os
 
 API_TOKEN = "7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY"
+bot = telebot.TeleBot(API_TOKEN)
+bot.remove_webhook()
+print("Webhook removed")
+
 if not API_TOKEN:
     print("❌ خطا: توکن ربات تنظیم نشده است.")
     exit(1)
