@@ -5,7 +5,8 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import threading
 import time
 
-API_TOKEN = os.getenv("7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY")
+API_TOKEN = "7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY"
+
 if not API_TOKEN:
     print("❌ خطا: متغیر محیطی TELEGRAM_API_TOKEN تنظیم نشده است. لطفاً توکن ربات را در تنظیمات هاست خود اضافه کنید.")
     exit(1)
