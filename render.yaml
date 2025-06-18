@@ -1,8 +1,11 @@
 services:
-  - type: worker
-    name: telegram-bot
-    runtime: python
+  - type: web
+    name: vixa-bot
+    env: python
+    region: oregon  # یا هر منطقه‌ای که می‌خوای
     plan: free
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python bot.py"
-
+    startCommand: "python your_bot_file.py"
+    envVars:
+      - key: TELEGRAM_API_TOKEN
+        sync: true
