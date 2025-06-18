@@ -1,265 +1,184 @@
-import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-import threading
-import time
-from flask import Flask
-import os
+import asyncio
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.utils import executor
+import aiohttp
 
 API_TOKEN = "7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY"
-bot = telebot.TeleBot(API_TOKEN)
-bot.remove_webhook()
-print("Webhook removed")
 
-if not API_TOKEN:
-    print("❌ خطا: توکن ربات تنظیم نشده است.")
-    exit(1)
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
 
-bot = telebot.TeleBot(API_TOKEN, threaded=False)
-app = Flask(__name__)
+LANGUAGES = {"fa": "فارسی", "en": "English", "ar": "العربية"}
 
-# داده‌های کاربر برای ذخیره زبان، موضوع، درس و سوالات
-user_data = {}
+user_lang = {}
+user_state = {}  # نگهداری حالت هر کاربر: None یا "translate" یا "weather" یا "calc" یا "reminder"
 
-languages = {
-    'fa': 'فارسی',
-    'en': 'English',
-    'ar': 'العربية'
+main_menu_buttons = {
+    "fa": ["ترجمه متن", "اخبار", "آب و هوا", "ماشین حساب", "جوک", "یادآوری"],
+    "en": ["Translate Text", "News", "Weather", "Calculator", "Joke", "Reminder"],
+    "ar": ["ترجمة النص", "الأخبار", "الطقس", "آلة حاسبة", "نكتة", "تذكير"]
 }
 
-subjects = {
-    'python': {
-        'fa': ['درس ۱: متغیرها 🐍', 'درس ۲: شرط‌ها 🤔', 'درس ۳: حلقه‌ها 🔄', 'درس ۴: توابع 🛠', 'درس ۵: لیست‌ها 📋'],
-        'en': ['Lesson 1: Variables 🐍', 'Lesson 2: Conditions 🤔', 'Lesson 3: Loops 🔄', 'Lesson 4: Functions 🛠', 'Lesson 5: Lists 📋'],
-        'ar': ['الدرس ١: المتغيرات 🐍', 'الدرس ٢: الشروط 🤔', 'الدرس ٣: الحلقات 🔄', 'الدرس ٤: الدوال 🛠', 'الدرس ٥: القوائم 📋']
-    },
-    'general': {
-        'fa': ['درس ۱: علم و دانش 📚', 'درس ۲: جغرافیا 🌍', 'درس ۳: فناوری ⚙', 'درس ۴: هنر 🎨', 'درس ۵: ورزش ⚽'],
-        'en': ['Lesson 1: Science 📚', 'Lesson 2: Geography 🌍', 'Lesson 3: Technology ⚙', 'Lesson 4: Art 🎨', 'Lesson 5: Sports ⚽'],
-        'ar': ['الدرس ١: العلوم 📚', 'الدرس ٢: الجغرافيا 🌍', 'الدرس ٣: التكنولوجيا ⚙', 'الدرس ٤: الفن 🎨', 'الدرس ٥: الرياضة ⚽']
-    },
-    'history': {
-        'fa': ['درس ۱: ایران باستان 🏛', 'درس ۲: دوران اسلامی 🕌', 'درس ۳: انقلاب‌ها ⚔', 'درس ۴: جنگ‌های جهانی 🌐', 'درس ۵: تاریخ معاصر 🕰'],
-        'en': ['Lesson 1: Ancient Iran 🏛', 'Lesson 2: Islamic Era 🕌', 'Lesson 3: Revolutions ⚔', 'Lesson 4: World Wars 🌐', 'Lesson 5: Modern History 🕰'],
-        'ar': ['الدرس ١: إيران القديمة 🏛', 'الدرس ٢: العصر الإسلامي 🕌', 'الدرس ٣: الثورات ⚔', 'الدرس ٤: الحروب العالمية 🌐', 'الدرس ٥: التاريخ الحديث 🕰']
+async def translate_text(text, target_lang):
+    url = "https://api.mymemory.translated.net/get"
+    params = {"q": text, "langpair": f"auto|{target_lang}"}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as resp:
+            data = await resp.json()
+            try:
+                return data["responseData"]["translatedText"]
+            except:
+                return "Error in translation"
+
+async def get_news(lang):
+    news = {
+        "fa": "خبر: امروز هوا آفتابی است.",
+        "en": "News: Today the weather is sunny.",
+        "ar": "خبر: الطقس مشمس اليوم."
     }
-}
+    return news.get(lang, news["en"])
 
-questions = {
-    'python': {
-        'fa': [
-            ("متغیر چیست؟ 🤔", ["یک ظرف 🥫", "یک عدد", "یک متن"], 0),
-            ("برای شرط استفاده می‌کنیم؟", ["if", "for", "while"], 0),
-            ("حلقه چیست؟ 🔄", ["تکرار", "شرط", "توابع"], 0),
-            ("چگونه تابع می‌سازیم؟", ["def", "func", "var"], 0),
-            ("لیست چیست؟", ["یک مجموعه", "یک عدد", "یک متن"], 0)
-        ],
-        'en': [
-            ("What is a variable? 🤔", ["A container 🥫", "A number", "A text"], 0),
-            ("Which keyword for condition?", ["if", "for", "while"], 0),
-            ("What is a loop? 🔄", ["Repetition", "Condition", "Function"], 0),
-            ("How to define a function?", ["def", "func", "var"], 0),
-            ("What is a list?", ["A collection", "A number", "A text"], 0)
-        ],
-        'ar': [
-            ("ما هو المتغير؟ 🤔", ["حاوية 🥫", "عدد", "نص"], 0),
-            ("أي كلمة شرط؟", ["if", "for", "while"], 0),
-            ("ما هي الحلقة؟ 🔄", ["تكرار", "شرط", "دالة"], 0),
-            ("كيف تنشئ دالة؟", ["def", "func", "var"], 0),
-            ("ما هي القائمة؟", ["مجموعة", "عدد", "نص"], 0)
-        ]
-    },
-    'general': {
-        'fa': [
-            ("آب چند درجه می‌جوشد؟", ["۱۰۰", "۵۰", "۲۰۰"], 0),
-            ("پایتخت ایران کجاست؟", ["تهران", "مشهد", "اصفهان"], 0),
-            ("سیاره ما کدام است؟", ["زمین", "مریخ", "زهره"], 0),
-            ("رنگ آسمان چیست؟", ["آبی", "قرمز", "سبز"], 0),
-            ("بزرگترین قاره؟", ["آسیا", "آفریقا", "اروپا"], 0)
-        ],
-        'en': [
-            ("At what temperature does water boil?", ["100", "50", "200"], 0),
-            ("Capital of Iran?", ["Tehran", "Mashhad", "Isfahan"], 0),
-            ("Which planet is ours?", ["Earth", "Mars", "Venus"], 0),
-            ("Color of sky?", ["Blue", "Red", "Green"], 0),
-            ("Largest continent?", ["Asia", "Africa", "Europe"], 0)
-        ],
-        'ar': [
-            ("عند أي درجة يغلي الماء؟", ["100", "50", "200"], 0),
-            ("عاصمة إيران؟", ["طهران", "مشهد", "أصفهان"], 0),
-            ("أي كوكب لنا؟", ["الأرض", "المريخ", "الزهرة"], 0),
-            ("لون السماء؟", ["أزرق", "أحمر", "أخضر"], 0),
-            ("أكبر قارة؟", ["آسيا", "أفريقيا", "أوروبا"], 0)
-        ]
-    },
-    'history': {
-        'fa': [
-            ("ایران باستان چه دوره‌ای است؟", ["پیش از اسلام", "دوره صفویه", "دوره قاجار"], 0),
-            ("انقلاب مشروطه کی بود؟", ["۱۹۰۶", "۱۸۵۰", "۲۰۰۰"], 0),
-            ("جنگ جهانی اول کی شروع شد؟", ["۱۹۱۴", "۱۸۹۰", "۱۹۵۰"], 0),
-            ("دوره اسلامی چه زمانی است؟", ["پس از ۶۱۰ میلادی", "قبل از ۶۱۰", "پس از ۱۰۰۰"], 0),
-            ("تاریخ معاصر به چه معنی است؟", ["صد سال اخیر", "هزار سال پیش", "۵۰ سال پیش"], 0)
-        ],
-        'en': [
-            ("What era is Ancient Iran?", ["Pre-Islamic", "Safavid", "Qajar"], 0),
-            ("When was the Constitutional Revolution?", ["1906", "1850", "2000"], 0),
-            ("When did WWI start?", ["1914", "1890", "1950"], 0),
-            ("When is Islamic Era?", ["After 610 AD", "Before 610", "After 1000"], 0),
-            ("What is modern history?", ["Last 100 years", "1000 years ago", "50 years ago"], 0)
-        ],
-        'ar': [
-            ("ما هي حقبة إيران القديمة؟", ["قبل الإسلام", "صفوي", "قاجار"], 0),
-            ("متى كانت الثورة الدستورية؟", ["1906", "1850", "2000"], 0),
-            ("متى بدأت الحرب العالمية الأولى؟", ["1914", "1890", "1950"], 0),
-            ("متى هي الحقبة الإسلامية؟", ["بعد 610 ميلادي", "قبل 610", "بعد 1000"], 0),
-            ("ما هو التاريخ الحديث؟", ["100 سنة الماضية", "1000 سنة مضت", "50 سنة مضت"], 0)
-        ]
+async def get_weather(city, lang):
+    responses = {
+        "fa": f"آب و هوای شهر {city} امروز آفتابی و ۳۰ درجه است.",
+        "en": f"Weather in {city} today is sunny and 30°C.",
+        "ar": f"الطقس في {city} اليوم مشمس و 30 درجة."
     }
-}
+    return responses.get(lang, responses["en"])
 
-stickers = {
-    'correct': 'CAACAgIAAxkBAAEHZvlkUo8ajxQJW6_MLQx5bR14Vbr6EgAC3gADVp29CqxCrpMH9Uz1IwQ',
-    'wrong': 'CAACAgIAAxkBAAEHZ0VkUo_4rRXAAUPk_Vmt8DbN6vdCZwAC6AADVp29CrzBrCNUhbhkIwQ'
-}
+async def get_joke(lang):
+    jokes = {
+        "fa": "یه مرد به دکتر گفت: دکتر جان، هر بار قهوه می‌خورم چشمم درد می‌گیره! دکتر گفت: قاشق رو از لیوان بیرون بیار!",
+        "en": "Why don’t scientists trust atoms? Because they make up everything!",
+        "ar": "لماذا لا يثق العلماء بالذرات؟ لأنها تكون كل شيء!"
+    }
+    return jokes.get(lang, jokes["en"])
 
-def language_keyboard():
-    kb = InlineKeyboardMarkup(row_width=3)
-    for code, name in languages.items():
-        kb.add(InlineKeyboardButton(name, callback_data=f"lang_{code}"))
+def get_language_code_by_name(name):
+    for code, lang_name in LANGUAGES.items():
+        if name == lang_name:
+            return code
+    return None
+
+def create_main_menu_keyboard(lang):
+    kb = ReplyKeyboardMarkup(resize_keyboard=True)
+    for btn in main_menu_buttons[lang]:
+        kb.add(KeyboardButton(btn))
     return kb
 
-def subject_keyboard(lang_code):
-    kb = InlineKeyboardMarkup(row_width=2)
-    for subj in subjects.keys():
-        name = {
-            'fa': {'python':'پایتون', 'general':'اطلاعات عمومی', 'history':'تاریخ'}[subj],
-            'en': {'python':'Python', 'general':'General Knowledge', 'history':'History'}[subj],
-            'ar': {'python':'بايثون', 'general':'معلومات عامة', 'history':'التاريخ'}[subj]
-        }[lang_code]
-        kb.add(InlineKeyboardButton(name, callback_data=f"subject_{subj}"))
-    return kb
+@dp.message_handler(commands=['start'])
+async def send_welcome(message: types.Message):
+    kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    for name in LANGUAGES.values():
+        kb.add(KeyboardButton(name))
+    await message.answer(
+        "لطفا زبان خود را انتخاب کنید\nPlease choose your language\nيرجى اختيار لغتك",
+        reply_markup=kb
+    )
+    user_state[message.from_user.id] = None
+    user_lang.pop(message.from_user.id, None)
 
-def lessons_keyboard(lang_code, lessons):
-    kb = InlineKeyboardMarkup(row_width=1)
-    for i, lesson in enumerate(lessons, 1):
-        kb.add(InlineKeyboardButton(f"درس {i} 📚", callback_data=f"lesson_{i-1}"))
-    kb.add(InlineKeyboardButton({'fa':'سوالات ❓','en':'Questions ❓','ar':'أسئلة ❓'}[lang_code], callback_data="start_questions"))
-    return kb
+@dp.message_handler()
+async def handle_all_messages(message: types.Message):
+    user_id = message.from_user.id
+    text = message.text
 
-def question_keyboard(lang_code, options):
-    kb = InlineKeyboardMarkup(row_width=1)
-    for i, opt in enumerate(options):
-        kb.add(InlineKeyboardButton(opt, callback_data=f"answer_{i}"))
-    return kb
+    # اگر زبان انتخاب نشده، سعی کن انتخاب زبان رو پیدا کنی
+    if user_id not in user_lang:
+        lang_code = get_language_code_by_name(text)
+        if lang_code:
+            user_lang[user_id] = lang_code
+            user_state[user_id] = None
+            kb = create_main_menu_keyboard(lang_code)
+            await message.answer({"fa": "منوی اصلی:", "en": "Main Menu:", "ar": "القائمة الرئيسية:"}[lang_code], reply_markup=kb)
+        else:
+            kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+            for name in LANGUAGES.values():
+                kb.add(KeyboardButton(name))
+            await message.answer(
+                "لطفا زبان خود را انتخاب کنید\nPlease choose your language\nيرجى اختيار لغتك",
+                reply_markup=kb
+            )
+        return
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    chat_id = message.chat.id
-    user_data[chat_id] = {}
-    bot.send_message(chat_id, "👋 سلام! لطفاً زبانت رو انتخاب کن / Please choose your language / اختر لغتك:", reply_markup=language_keyboard())
+    lang = user_lang[user_id]
 
-@bot.callback_query_handler(func=lambda call: True)
-def callback_handler(call):
-    chat_id = call.message.chat.id
-    data = call.data
+    # اگر در حالت خاصی هستیم، پیام کاربر بر اساس حالت بررسی شود
+    state = user_state.get(user_id)
 
-    try:
-        if data.startswith("lang_"):
-            lang_code = data.split("_")[1]
-            user_data[chat_id] = {'lang': lang_code}
-            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                                  text={"fa":"زبان انتخاب شد! حالا موضوع رو انتخاب کن 🧐",
-                                        "en":"Language set! Now pick a subject 🧐",
-                                        "ar":"تم اختيار اللغة! اختر الموضوع 🧐"}[lang_code],
-                                  reply_markup=subject_keyboard(lang_code))
+    if state == "translate":
+        translated = await translate_text(text, lang)
+        await message.answer(translated)
+        user_state[user_id] = None
+        kb = create_main_menu_keyboard(lang)
+        await message.answer({"fa": "منوی اصلی:", "en": "Main Menu:", "ar": "القائمة الرئيسية:"}[lang], reply_markup=kb)
+        return
 
-        elif data.startswith("subject_"):
-            subj = data.split("_")[1]
-            lang_code = user_data[chat_id]['lang']
-            user_data[chat_id].update({'subject': subj, 'lesson_index': 0, 'score': 0})
-            lessons = subjects[subj][lang_code]
-            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                                  text={"fa":"شروع آموزش! درس اول:\n\n" + lessons[0],
-                                        "en":"Starting lessons! Lesson 1:\n\n" + lessons[0],
-                                        "ar":"بدء الدروس! الدرس ١:\n\n" + lessons[0]}[lang_code],
-                                  reply_markup=lessons_keyboard(lang_code, lessons))
+    elif state == "weather":
+        weather = await get_weather(text, lang)
+        await message.answer(weather)
+        user_state[user_id] = None
+        kb = create_main_menu_keyboard(lang)
+        await message.answer({"fa": "منوی اصلی:", "en": "Main Menu:", "ar": "القائمة الرئيسية:"}[lang], reply_markup=kb)
+        return
 
-        elif data.startswith("lesson_"):
-            lang_code = user_data[chat_id]['lang']
-            subj = user_data[chat_id]['subject']
-            idx = int(data.split("_")[1])
-            lessons = subjects[subj][lang_code]
-            if idx < len(lessons):
-                user_data[chat_id]['lesson_index'] = idx
-                bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                                      text={"fa":f"درس {idx+1}:\n\n" + lessons[idx],
-                                            "en":f"Lesson {idx+1}:\n\n" + lessons[idx],
-                                            "ar":f"الدرس {idx+1}:\n\n" + lessons[idx]}[lang_code],
-                                      reply_markup=lessons_keyboard(lang_code, lessons))
-            else:
-                bot.answer_callback_query(call.id, "هیچ درس جدیدی نیست! / No more lessons! / لا مزيد من الدروس!")
-
-        elif data == "start_questions":
-            lang_code = user_data[chat_id]['lang']
-            subj = user_data[chat_id]['subject']
-            user_data[chat_id]['q_index'] = 0
-            user_data[chat_id]['score'] = 0
-            send_question(chat_id)
-
-        elif data.startswith("answer_"):
-            lang_code = user_data[chat_id]['lang']
-            subj = user_data[chat_id]['subject']
-            q_idx = user_data[chat_id]['q_index']
-            selected = int(data.split("_")[1])
-            correct = questions[subj][lang_code][q_idx][2]
-
-            if selected == correct:
-                user_data[chat_id]['score'] += 1
-                bot.send_sticker(chat_id, stickers['correct'])
-                bot.answer_callback_query(call.id, "🙌 آفرین! درست زدی! / Correct! / صح! 🎉")
-            else:
-                bot.send_sticker(chat_id, stickers['wrong'])
-                bot.answer_callback_query(call.id, "🙈 اوووه، اشتباه شد! / Wrong! / خطأ! 😅")
-
-            user_data[chat_id]['q_index'] += 1
-            if user_data[chat_id]['q_index'] < len(questions[subj][lang_code]):
-                send_question(chat_id)
-            else:
-                score = user_data[chat_id]['score']
-                total = len(questions[subj][lang_code])
-                texts = {
-                    'fa': f"🎉 تبریک! امتیاز شما: {score}/{total} 🎉\n\nمعلومه زرنگی 😉",
-                    'en': f"🎉 Congrats! Your score: {score}/{total} 🎉\n\nYou’re smart 😉",
-                    'ar': f"🎉 مبروك! نتيجتك: {score}/{total} 🎉\n\nأنت ذكي 😉"
-                }
-                bot.send_message(chat_id, texts[lang_code])
-                user_data.pop(chat_id, None)
-    except Exception as e:
-        print(f"Error in callback_handler: {e}")
-        bot.answer_callback_query(call.id, "❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.")
-
-def send_question(chat_id):
-    lang_code = user_data[chat_id]['lang']
-    subj = user_data[chat_id]['subject']
-    q_idx = user_data[chat_id]['q_index']
-    q_text, options, _ = questions[subj][lang_code][q_idx]
-    bot.send_message(chat_id, q_text, reply_markup=question_keyboard(lang_code, options))
-
-# Flask route فقط برای نگه داشتن اپ در رندر
-@app.route("/")
-def index():
-    return "Bot is running!"
-
-def polling():
-    while True:
+    elif state == "calc":
         try:
-            bot.polling(none_stop=True)
-        except Exception as e:
-            print(f"Error in polling: {e}")
-            time.sleep(5)
+            allowed_chars = "0123456789+-*/(). "
+            if any(ch not in allowed_chars for ch in text):
+                raise ValueError
+            result = eval(text)
+            await message.answer(str(result))
+        except:
+            await message.answer({"fa": "فرمول نامعتبر است", "en": "Invalid formula", "ar": "صيغة غير صالحة"}[lang])
+        user_state[user_id] = None
+        kb = create_main_menu_keyboard(lang)
+        await message.answer({"fa": "منوی اصلی:", "en": "Main Menu:", "ar": "القائمة الرئيسية:"}[lang], reply_markup=kb)
+        return
 
-if __name__ == "__main__":
-    polling_thread = threading.Thread(target=polling)
-    polling_thread.start()
+    elif state == "reminder":
+        try:
+            minutes = int(text)
+            await message.answer({"fa": f"یادآوری در {minutes} دقیقه فعال شد", "en": f"Reminder set for {minutes} minutes", "ar": f"تم ضبط التذكير بعد {minutes} دقيقة"}[lang])
+            # اجرای یادآوری به صورت غیرهمزمان (این تابع پاسخ سریع می‌دهد و بعد یادآوری را ارسال می‌کند)
+            asyncio.create_task(reminder_task(user_id, minutes, lang))
+        except:
+            await message.answer({"fa": "عدد معتبر وارد کنید", "en": "Enter a valid number", "ar": "أدخل رقما صحيحا"}[lang])
+        user_state[user_id] = None
+        kb = create_main_menu_keyboard(lang)
+        await message.answer({"fa": "منوی اصلی:", "en": "Main Menu:", "ar": "القائمة الرئيسية:"}[lang], reply_markup=kb)
+        return
 
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    # اگر حالت خاصی نیست، پیام کاربر بررسی می‌شود (منوی اصلی)
+    if text == main_menu_buttons[lang][0]:  # ترجمه متن
+        user_state[user_id] = "translate"
+        await message.answer({"fa": "لطفا متن را ارسال کنید:", "en": "Please send the text:", "ar": "يرجى إرسال النص:"}[lang])
+    elif text == main_menu_buttons[lang][1]:  # اخبار
+        news = await get_news(lang)
+        await message.answer(news)
+    elif text == main_menu_buttons[lang][2]:  # آب و هوا
+        user_state[user_id] = "weather"
+        await message.answer({"fa": "نام شهر را بفرستید:", "en": "Send city name:", "ar": "أرسل اسم المدينة:"}[lang])
+    elif text == main_menu_buttons[lang][3]:  # ماشین حساب
+        user_state[user_id] = "calc"
+        await message.answer({"fa": "فرمول محاسبه را به صورت ساده وارد کنید (مثال: 2+2):", "en": "Enter calculation formula (example: 2+2):", "ar": "أدخل صيغة الحساب (مثال: 2+2):"}[lang])
+    elif text == main_menu_buttons[lang][4]:  # جوک
+        joke = await get_joke(lang)
+        await message.answer(joke)
+    elif text == main_menu_buttons[lang][5]:  # یادآوری
+        user_state[user_id] = "reminder"
+        await message.answer({"fa": "زمان یادآوری را به دقیقه وارد کنید:", "en": "Enter reminder time in minutes:", "ar": "أدخل وقت التذكير بالدقائق:"}[lang])
+    else:
+        kb = create_main_menu_keyboard(lang)
+        await message.answer({"fa": "لطفا یکی از گزینه‌های منو را انتخاب کنید.", "en": "Please select an option from the menu.", "ar": "يرجى اختيار خيار من القائمة."}[lang], reply_markup=kb)
+
+async def reminder_task(user_id, minutes, lang):
+    await asyncio.sleep(minutes * 60)
+    try:
+        await bot.send_message(user_id, {"fa": "یادآوری شما! ⏰", "en": "Your reminder! ⏰", "ar": "تذكيرك! ⏰"}[lang])
+    except:
+        pass
+
+if __name__ == '__main__':
+    executor.start_polling(dp, skip_updates=True)
