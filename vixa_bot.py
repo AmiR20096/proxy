@@ -1,9 +1,10 @@
 import os
-from flask import Flask, request
+from flask import Flask
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+import threading
+import time
 
-# دریافت توکن از متغیر محیطی TELEGRAM_API_TOKEN
 API_TOKEN = os.getenv('7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY')
 if not API_TOKEN:
     print("لطفا متغیر محیطی TELEGRAM_API_TOKEN را تنظیم کنید!")
@@ -146,13 +147,6 @@ def question_keyboard(lang_code, options):
         kb.add(InlineKeyboardButton(opt, callback_data=f"answer_{i}"))
     return kb
 
-@app.route(f"/{API_TOKEN}", methods=['POST'])
-def webhook():
-    json_str = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return "!", 200
-
 @bot.message_handler(commands=['start'])
 def start(message):
     chat_id = message.chat.id
@@ -243,16 +237,24 @@ def send_question(chat_id):
 
     bot.send_message(chat_id, q_text, reply_markup=question_keyboard(lang_code, options))
 
+# Flask route فقط برای نگه داشتن اپ در رندر
+@app.route("/")
+def index():
+    return "Bot is running!"
+
+def polling():
+    while True:
+        try:
+            bot.polling(none_stop=True)
+        except Exception as e:
+            print(f"Error in polling: {e}")
+            time.sleep(5)  # تاخیر در صورت بروز خطا
+
 if __name__ == "__main__":
-    # دریافت آدرس وبهوک از متغیر محیطی WEBHOOK_URL
-    WEBHOOK_URL_BASE = os.getenv('https://vixa-bot.onrender.com')
-    if not WEBHOOK_URL_BASE:
-        print("لطفا متغیر محیطی WEBHOOK_URL را تنظیم کنید! (مثال: https://yourapp.onrender.com)")
-        exit(1)
-    WEBHOOK_URL_PATH = f"/{API_TOKEN}"
+    # اجرای polling در یک thread جداگانه
+    polling_thread = threading.Thread(target=polling)
+    polling_thread.start()
 
-    bot.remove_webhook()
-    bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH)
-    print("✅ ربات با موفقیت با وبهوک اجرا شد!")
-
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    # اجرای وب‌سرور Flask روی پورت رندر
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
