@@ -253,6 +253,9 @@ def polling():
             print(f"Error in polling: {e}")
             time.sleep(5)
 
+bot.remove_webhook()
+bot.polling(none_stop=True)
+
 if __name__ == "__main__":
     # اجرای polling در یک Thread جدا
     polling_thread = threading.Thread(target=polling)
