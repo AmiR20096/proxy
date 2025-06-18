@@ -1,308 +1,288 @@
+import os
+from flask import Flask, request
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-API_TOKEN = "7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY"
+API_TOKEN = os.getenv('7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY')
+WEBHOOK_URL_BASE = os.getenv('https://core.telegram.org/bots/api')
+WEBHOOK_URL_PATH = f"/{API_TOKEN}/"
+
 bot = telebot.TeleBot(API_TOKEN)
+app = Flask(__name__)
 
-user_data = {}
-
+# داده‌های زبان‌ها
 languages = {
     'fa': '🇮🇷 فارسی',
-    'en': '🇺🇸 English',
+    'en': '🇬🇧 English',
     'ar': '🇸🇦 العربية'
 }
 
+# موضوعات آموزشی
 topics = {
-    'python': {'fa':'🐍 آموزش پایتون', 'en':'🐍 Python Lessons', 'ar':'🐍 دروس بايثون'},
-    'general': {'fa':'🧠 اطلاعات عمومی', 'en':'🧠 General Knowledge', 'ar':'🧠 المعرفة العامة'},
-    'history': {'fa':'📜 تاریخ', 'en':'📜 History', 'ar':'📜 التاريخ'}
+    'python': {'fa': 'پایتون 🐍', 'en': 'Python 🐍', 'ar': 'بايثون 🐍'},
+    'general': {'fa': 'اطلاعات عمومی 🧠', 'en': 'General Knowledge 🧠', 'ar': 'معلومات عامة 🧠'},
+    'history': {'fa': 'تاریخ 📜', 'en': 'History 📜', 'ar': 'تاريخ 📜'}
 }
 
-# پیام‌ها به سه زبان (با طنز و ایموجی)
-texts = {
-    'start': {
-        'fa': "🤣🤣 سلام! اول یه زبون انتخاب کن که من باهات حال کنم!",
-        'en': "🤣🤣 Hey! Pick a language so I can vibe with you!",
-        'ar': "🤣🤣 هلا! أولاً اختار اللغة عشان نضحك سوى!"
-    },
-    'choose_topic': {
-        'fa': "🔥 موضوع رو انتخاب کن که بترکونی!",
-        'en': "🔥 Choose a topic to rock!",
-        'ar': "🔥 اختر موضوع عشان تكون فنان!"
-    },
-    'lesson_intro': {
-        'fa': "📚 بفرما آموزش‌ها! آماده برای خفن بازی؟ 😁",
-        'en': "📚 Here are your lessons! Ready to be awesome? 😁",
-        'ar': "📚 هذه دروسك! جاهز لتكون رائع؟ 😁"
-    },
-    'question_intro': {
-        'fa': "❓ سوال‌ها میان! جواب بده وگرنه مسخره‌ات می‌کنم 😂",
-        'en': "❓ Questions coming! Answer or I roast you 😂",
-        'ar': "❓ الأسئلة جاية! جاوب وإلا رح أسخرك 😂"
-    },
-    'score_good': {
-        'fa': "🌟 تو نابغی! ستاره‌ی منی! ⭐️⭐️⭐️",
-        'en': "🌟 You're a genius! My star! ⭐️⭐️⭐️",
-        'ar': "🌟 أنت عبقري! نجمتي! ⭐️⭐️⭐️"
-    },
-    'score_ok': {
-        'fa': "👏 خوب بود، بهتر از اینم می‌تونی!",
-        'en': "👏 Good job, you can do better!",
-        'ar': "👏 عمل جيد، يمكنك أن تكون أفضل!"
-    },
-    'score_bad': {
-        'fa': "😂 اوووه، بیا یه قهوه بخور و دوباره تلاش کن!",
-        'en': "😂 Oh no, grab a coffee and try again!",
-        'ar': "😂 أوه لا، اشرب قهوة وحاول مرة أخرى!"
-    }
-}
-
-# آموزش‌ها به سه زبان (هر موضوع 5 آموزش)
+# محتوا و سوالات (5 درس و 5 سوال برای هر موضوع)
 lessons = {
     'python': {
         'fa': [
-            "👨‍💻 پایتون مثل موزیک رپ جذابه! شروع کن با print('سلام دنیا') 😎",
-            "🔍 متغیرها مثل جیب‌پول تو هستند!",
-            "🎯 شرط‌ها مثل پلیس راهنمایی: if/else",
-            "🔄 حلقه‌ها مثل چرخ و فلک!",
-            "📚 فانکشن‌ها مثل ربات‌های دستیار!"
+            "درس ۱: پایتون یه زبان برنامه‌نویسی خیلی ساده‌ست که همه عاشقشن! 😍",
+            "درس ۲: متغیرها توی پایتون مثل جعبه‌ست که می‌تونی هرچی خواستی بریزی توش! 📦",
+            "درس ۳: شرط‌ها بهت کمک می‌کنن تصمیم بگیری کی چی کار کنه، مثلا اگه گرسنه بودی غذا بخور 🍔",
+            "درس ۴: حلقه‌ها یعنی کاری رو چند بار پشت سر هم انجام بدی، مثل تکرار موزیک مورد علاقه‌ت 🎵",
+            "درس ۵: توابع بخش‌های کوچیک کد هستن که هر وقت خواستی می‌تونی صداشون کنی 🔊"
         ],
         'en': [
-            "👨‍💻 Python is like rap music! Start with print('Hello World') 😎",
-            "🔍 Variables are like your wallet!",
-            "🎯 Conditions are like traffic cops: if/else",
-            "🔄 Loops are like a carousel!",
-            "📚 Functions are like assistant robots!"
+            "Lesson 1: Python is a super simple programming language everyone loves! 😍",
+            "Lesson 2: Variables are like boxes where you can put anything you want! 📦",
+            "Lesson 3: Conditions help you decide what to do, like if you're hungry, eat 🍔",
+            "Lesson 4: Loops let you repeat things multiple times, like your favorite song 🎵",
+            "Lesson 5: Functions are small pieces of code you can call whenever you want 🔊"
         ],
         'ar': [
-            "👨‍💻 بايثون مثل الراب! ابدأ بـ print('مرحبا بالعالم') 😎",
-            "🔍 المتغيرات مثل محفظتك!",
-            "🎯 الشروط مثل رجال المرور: if/else",
-            "🔄 الحلقات مثل الدوامة!",
-            "📚 الدوال مثل الروبوتات المساعدة!"
+            "الدرس ١: بايثون لغة برمجة سهلة كتير والكل بحبها! 😍",
+            "الدرس ٢: المتغيرات مثل صندوق فيك تحط فيه أي شي بدك ياه! 📦",
+            "الدرس ٣: الشروط بتساعدك تقرر شو تعمل، مثل إذا كنت جوعان كل 🍔",
+            "الدرس ٤: الحلقات بتخليك تعيد الشي كذا مرة، مثل أغنيتك المفضلة 🎵",
+            "الدرس ٥: الدوال هي قطع صغيرة من الكود فيك تناديها بأي وقت 🔊"
+        ],
+        'questions': [
+            {
+                'fa': ("پایتون یک زبان برنامه‌نویسی است؟", ["درست", "نادرست"], 0),
+                'en': ("Python is a programming language?", ["True", "False"], 0),
+                'ar': ("هل بايثون لغة برمجة؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("متغیرها برای ذخیره داده‌ها استفاده می‌شوند؟", ["درست", "نادرست"], 0),
+                'en': ("Variables are used to store data?", ["True", "False"], 0),
+                'ar': ("المتغيرات تستخدم لتخزين البيانات؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("شرط‌ها به برنامه می‌گویند چه کاری انجام دهد؟", ["درست", "نادرست"], 0),
+                'en': ("Conditions tell the program what to do?", ["True", "False"], 0),
+                'ar': ("الشروط بتخبر البرنامج شو يعمل؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("حلقه‌ها برای تکرار دستورات استفاده می‌شوند؟", ["درست", "نادرست"], 0),
+                'en': ("Loops are used to repeat commands?", ["True", "False"], 0),
+                'ar': ("الحلقات تستخدم لتكرار الأوامر؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("توابع بخش‌هایی از کد هستند؟", ["درست", "نادرست"], 0),
+                'en': ("Functions are parts of code?", ["True", "False"], 0),
+                'ar': ("الدوال هي أجزاء من الكود؟", ["صحيح", "خطأ"], 0)
+            },
         ]
     },
     'general': {
         'fa': [
-            "🌍 زمین گرده، بعضیا هنوز فکر می‌کنن صافه!",
-            "🚀 اولین انسان روی ماه نیل آرمسترانگ بود!",
-            "📱 گوشی هوشمند ۲۵ سال پیش نبود!",
-            "🍕 پیتزا از ایتالیاست!",
-            "🧠 مغز انسان سریع‌تر از اینترنت 5G است!"
+            "درس ۱: زمین گرد است و همه‌مون روش زندگی می‌کنیم 🌍",
+            "درس ۲: خورشید از ستاره‌هاست که نور و گرما می‌دهد ☀️",
+            "درس ۳: آب برای زندگی لازم است و بدن ما ۷۰٪ آب دارد 💧",
+            "درس ۴: هوا چیزی است که ما تنفس می‌کنیم و بدونش نمی‌تونیم باشیم 🌬️",
+            "درس ۵: گیاهان با فتوسنتز غذا درست می‌کنند 🌿"
         ],
         'en': [
-            "🌍 Earth is round, some still think it's flat!",
-            "🚀 Neil Armstrong was first on the moon!",
-            "📱 Smartphones didn't exist 25 years ago!",
-            "🍕 Pizza is from Italy!",
-            "🧠 The brain is faster than 5G internet!"
+            "Lesson 1: The Earth is round and we all live on it 🌍",
+            "Lesson 2: The Sun is a star that gives light and heat ☀️",
+            "Lesson 3: Water is necessary for life and our body is 70% water 💧",
+            "Lesson 4: Air is what we breathe and can't live without it 🌬️",
+            "Lesson 5: Plants make food with photosynthesis 🌿"
         ],
         'ar': [
-            "🌍 الأرض مستديرة، والبعض لا يصدق!",
-            "🚀 نيل آرمسترونغ كان أول من وصل للقمر!",
-            "📱 الهواتف الذكية لم تكن موجودة منذ 25 سنة!",
-            "🍕 البيتزا من إيطاليا!",
-            "🧠 الدماغ أسرع من إنترنت 5G!"
+            "الدرس ١: الأرض كروية وكلنا عايشين عليها 🌍",
+            "الدرس ٢: الشمس نجم بيعطي ضوء وحرارة ☀️",
+            "الدرس ٣: الماء ضروري للحياة وجسمنا ٧٠٪ ماء 💧",
+            "الدرس ٤: الهواء هو يلي منتنفسه وما فينا نعيش بدونه 🌬️",
+            "الدرس ٥: النباتات بتصنع أكل عن طريق البناء الضوئي 🌿"
+        ],
+        'questions': [
+            {
+                'fa': ("زمین گرد است؟", ["درست", "نادرست"], 0),
+                'en': ("The Earth is round?", ["True", "False"], 0),
+                'ar': ("هل الأرض كروية؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("خورشید یک ستاره است؟", ["درست", "نادرست"], 0),
+                'en': ("The Sun is a star?", ["True", "False"], 0),
+                'ar': ("هل الشمس نجم؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("بدن انسان ۷۰٪ آب دارد؟", ["درست", "نادرست"], 0),
+                'en': ("Human body is 70% water?", ["True", "False"], 0),
+                'ar': ("هل جسم الإنسان ٧٠٪ ماء؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("هوا چیزی است که تنفس می‌کنیم؟", ["درست", "نادرست"], 0),
+                'en': ("Air is what we breathe?", ["True", "False"], 0),
+                'ar': ("هل الهواء هو يلي منتنفسه؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("گیاهان فتوسنتز می‌کنند؟", ["درست", "نادرست"], 0),
+                'en': ("Plants do photosynthesis?", ["True", "False"], 0),
+                'ar': ("هل النباتات بتعمل البناء الضوئي؟", ["صحيح", "خطأ"], 0)
+            },
         ]
     },
     'history': {
         'fa': [
-            "🏺 مصر باستان پر از راز!",
-            "⚔️ جنگ‌های صلیبی داستان خون و دود!",
-            "👑 شاهان قدیم استرس داشتند!",
-            "🕰️ ساعت اختراع شد تا دیر نکنیم!",
-            "🚢 کشتی تایتانیک داستان غرق شدن!"
+            "درس ۱: تاریخ یعنی داستان زندگی آدم‌ها و اتفاقات گذشته 📜",
+            "درس ۲: اولین انسان‌ها میلیون‌ها سال پیش زندگی می‌کردند 🦴",
+            "درس ۳: تمدن‌های بزرگی مثل مصر و ایران خیلی قدیمی هستند 🏺",
+            "درس ۴: جنگ‌ها و صلح‌ها بخش مهمی از تاریخ هستند ⚔️✌️",
+            "درس ۵: ما از تاریخ می‌آموزیم که اشتباهات گذشته را تکرار نکنیم 📚"
         ],
         'en': [
-            "🏺 Ancient Egypt full of secrets!",
-            "⚔️ Crusades were bloody wars!",
-            "👑 Old kings were stressed!",
-            "🕰️ Clocks invented to stop being late!",
-            "🚢 Titanic was a sinking story!"
+            "Lesson 1: History is the story of people and past events 📜",
+            "Lesson 2: The first humans lived millions of years ago 🦴",
+            "Lesson 3: Great civilizations like Egypt and Iran are very old 🏺",
+            "Lesson 4: Wars and peace are important parts of history ⚔️✌️",
+            "Lesson 5: We learn from history not to repeat past mistakes 📚"
         ],
         'ar': [
-            "🏺 مصر القديمة مليئة بالأسرار!",
-            "⚔️ الحروب الصليبية كانت دموية!",
-            "👑 الملوك القدماء كانوا متوترين!",
-            "🕰️ اخترعوا الساعة لعدم التأخير!",
-            "🚢 قصة غرق التايتانيك!"
+            "الدرس ١: التاريخ هو قصة الناس والأحداث الماضية 📜",
+            "الدرس ٢: أول البشر عاشوا من ملايين السنين 🦴",
+            "الدرس ٣: حضارات عظيمة مثل مصر وإيران قديمة كتير 🏺",
+            "الدرس ٤: الحروب والسلام جزء مهم من التاريخ ⚔️✌️",
+            "الدرس ٥: بنتعلم من التاريخ ما نعيد أخطاء الماضي 📚"
+        ],
+        'questions': [
+            {
+                'fa': ("تاریخ داستان زندگی آدم‌ها است؟", ["درست", "نادرست"], 0),
+                'en': ("History is the story of people?", ["True", "False"], 0),
+                'ar': ("هل التاريخ قصة الناس؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("اولین انسان‌ها میلیون‌ها سال پیش بودند؟", ["درست", "نادرست"], 0),
+                'en': ("First humans lived millions of years ago?", ["True", "False"], 0),
+                'ar': ("هل أول البشر عاشوا من ملايين السنين؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("تمدن مصر قدیمی است؟", ["درست", "نادرست"], 0),
+                'en': ("Egypt civilization is old?", ["True", "False"], 0),
+                'ar': ("هل حضارة مصر قديمة؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("جنگ و صلح بخشی از تاریخ هستند؟", ["درست", "نادرست"], 0),
+                'en': ("War and peace are parts of history?", ["True", "False"], 0),
+                'ar': ("هل الحرب والسلام أجزاء من التاريخ؟", ["صحيح", "خطأ"], 0)
+            },
+            {
+                'fa': ("ما باید از تاریخ یاد بگیریم؟", ["درست", "نادرست"], 0),
+                'en': ("We should learn from history?", ["True", "False"], 0),
+                'ar': ("هل لازم نتعلم من التاريخ؟", ["صحيح", "خطأ"], 0)
+            },
         ]
     }
 }
 
-# سوالات به سه زبان: هر سوال به صورت (سوال, [جواب‌ها], جواب_درست_اندیس)
-questions = {
-    'python': {
-        'fa': [
-            ("print('سلام') چه کاری می‌کند؟", ['سلام را چاپ می‌کند', 'صدا می‌دهد', 'هیچ کاری نمی‌کند'], 0),
-            ("کدام متغیر درست است؟", ['1number', 'number1', 'number-1'], 1),
-            ("for چیست؟", ['حلقه', 'متغیر', 'تابع'], 0),
-            ("تابع چیست؟", ['کد تکراری', 'دستور شرطی', 'نوع داده'], 0),
-            ("کدام نماد برای نظر است؟", ['#', '//', '/*'], 0)
-        ],
-        'en': [
-            ("What does print('Hello') do?", ['Prints Hello', 'Makes sound', 'Does nothing'], 0),
-            ("Which variable name is correct?", ['1number', 'number1', 'number-1'], 1),
-            ("What is 'for'?", ['Loop', 'Variable', 'Function'], 0),
-            ("What is a function?", ['Reusable code', 'Condition', 'Data type'], 0),
-            ("Which symbol is comment?", ['#', '//', '/*'], 0)
-        ],
-        'ar': [
-            ("ماذا يفعل print('مرحبا')؟", ['يطبع مرحبا', 'يصدر صوت', 'لا يفعل شيئاً'], 0),
-            ("أي اسم متغير صحيح؟", ['1number', 'number1', 'number-1'], 1),
-            ("ما هو 'for'؟", ['حلقة', 'متغير', 'دالة'], 0),
-            ("ما هي الدالة؟", ['كود قابل لإعادة الاستخدام', 'شرط', 'نوع بيانات'], 0),
-            ("أي رمز للتعليق؟", ['#', '//', '/*'], 0)
-        ]
-    },
-    'general': {
-        'fa': [
-            ("اولین ماه‌نورد کی بود؟", ['نیل آرمسترانگ', 'یوری گاگارین', 'فضانورد بازنشسته'], 0),
-            ("زمین گرد است یا صاف؟", ['صاف', 'گرد', 'مربع'], 1),
-            ("اولین تلفن همراه کی ساخته شد؟", ['1983', '1990', '2000'], 0),
-            ("پیتزا از کجاست؟", ['ایتالیا', 'فرانسه', 'آلمان'], 0),
-            ("مغز چقدر سریع است؟", ['کند', 'سریع', 'متوسط'], 1)
-        ],
-        'en': [
-            ("Who was the first moonwalker?", ['Neil Armstrong', 'Yuri Gagarin', 'Retired astronaut'], 0),
-            ("Is Earth flat or round?", ['Flat', 'Round', 'Square'], 1),
-            ("When was the first mobile phone made?", ['1983', '1990', '2000'], 0),
-            ("Where is pizza from?", ['Italy', 'France', 'Germany'], 0),
-            ("How fast is the brain?", ['Slow', 'Fast', 'Medium'], 1)
-        ],
-        'ar': [
-            ("من كان أول من مشى على القمر؟", ['نيل آرمسترونغ', 'يوري غاغارين', 'رائد فضاء متقاعد'], 0),
-            ("هل الأرض مسطحة أم مستديرة؟", ['مسطحة', 'مستديرة', 'مربعة'], 1),
-            ("متى تم صنع أول هاتف محمول؟", ['1983', '1990', '2000'], 0),
-            ("من أين تأتي البيتزا؟", ['إيطاليا', 'فرنسا', 'ألمانيا'], 0),
-            ("ما سرعة الدماغ؟", ['بطيء', 'سريع', 'متوسط'], 1)
-        ]
-    },
-    'history': {
-        'fa': [
-            ("مومیایی‌ها متعلق به کدام کشورند؟", ['مصر', 'یونان', 'ایران'], 0),
-            ("جنگ‌های صلیبی مربوط به چه قرنی است؟", ['قرن 11', 'قرن 15', 'قرن 19'], 0),
-            ("کدام شاه قدیم نبود؟", ['کوروش', 'الکساندر', 'پادشاه فوتبال'], 2),
-            ("ساعت برای چه اختراع شد؟", ['تنظیم زمان', 'فروش', 'تزئین'], 0),
-            ("تایتانیک چه بود؟", ['کشتی', 'هواپیما', 'قطار'], 0)
-        ],
-        'en': [
-            ("Mummies belong to which country?", ['Egypt', 'Greece', 'Iran'], 0),
-            ("The Crusades happened in which century?", ['11th', '15th', '19th'], 0),
-            ("Which one was NOT an old king?", ['Cyrus', 'Alexander', 'Football King'], 2),
-            ("Why was the clock invented?", ['To tell time', 'For sale', 'Decoration'], 0),
-            ("What was Titanic?", ['Ship', 'Plane', 'Train'], 0)
-        ],
-        'ar': [
-            ("إلى أي دولة تنتمي المومياوات؟", ['مصر', 'اليونان', 'إيران'], 0),
-            ("في أي قرن حدثت الحروب الصليبية؟", ['الحادي عشر', 'الخامس عشر', 'التاسع عشر'], 0),
-            ("أيهم لم يكن ملكاً قديماً؟", ['كورش', 'الإسكندر', 'ملك كرة القدم'], 2),
-            ("لماذا اخترع الساعة؟", ['لتحديد الوقت', 'للبيع', 'للزينة'], 0),
-            ("ما هو التايتانيك؟", ['سفينة', 'طائرة', 'قطار'], 0)
-        ]
-    }
-}
-
+# استیکرها و پاسخ‌های شوخی
 stickers = {
-    'good': 'CAACAgIAAxkBAAEFq1JkDjQl_Jr9q5tTzYmICZy-0lyRAwAC3QADr8ZSGwPfuZ1U_4aQHgQ',
-    'bad': 'CAACAgIAAxkBAAEFq1NkDjS-NHvhC8zGCHH3br4ONNg3CQACBAADr8ZSGzBPaSWwsOaMHgQ'
+    'correct': 'CAACAgIAAxkBAAEBQZ5gQ8lGzoVmvpt-N0H3bqEOV_H8AAJ9AAO8-T4RnQqv5Ym1Mq7iQE',
+    'wrong': 'CAACAgIAAxkBAAEBRaFgQ6AvSdHrK7HJk5pBNKu5iSsy8gACiAAPpL0qEmLQpQ2RUrUziQE'
 }
 
-def lang_markup():
-    markup = InlineKeyboardMarkup(row_width=3)
+funny_correct = {
+    'fa': ["وااای چه نابغه‌ای! 😎", "دمت گرم! 🎉", "درست جواب دادی، کُشته شدیم! 😂"],
+    'en': ["Wow, you're a genius! 😎", "Nice one! 🎉", "Correct, you rock! 😂"],
+    'ar': ["واو، إنت عبقري! 😎", "حلو كتير! 🎉", "صح، إنت رهيب! 😂"]
+}
+
+funny_wrong = {
+    'fa': ["آخ جوووون، اشتباه شد! 🙈", "دوباره تلاش کن، نشد! 🤪", "نه بابا اشتباهه! 😂"],
+    'en': ["Oops, wrong! 🙈", "Try again, no luck! 🤪", "Nope, wrong! 😂"],
+    'ar': ["أوه، خطأ! 🙈", "حاول مرة تانية! 🤪", "لا، خطأ! 😂"]
+}
+
+# دیتای کاربر برای ذخیره زبان، موضوع، مرحله و امتیاز
+user_data = {}
+
+def language_keyboard():
+    kb = InlineKeyboardMarkup(row_width=3)
     for code, name in languages.items():
-        markup.add(InlineKeyboardButton(name, callback_data=f'lang_{code}'))
-    return markup
+        kb.add(InlineKeyboardButton(name, callback_data=f"lang_{code}"))
+    return kb
 
-def topic_markup(lang):
-    markup = InlineKeyboardMarkup(row_width=2)
-    for key in topics.keys():
-        markup.add(InlineKeyboardButton(topics[key][lang], callback_data=f'topic_{key}'))
-    return markup
+def topics_keyboard(lang_code):
+    kb = InlineKeyboardMarkup(row_width=1)
+    for code, names in topics.items():
+        kb.add(InlineKeyboardButton(names[lang_code], callback_data=f"topic_{code}"))
+    return kb
 
-def next_lesson_markup(idx, total, lang):
-    markup = InlineKeyboardMarkup()
-    if idx < total -1:
-        # متن دکمه بعدی به زبان انتخابی
-        btn_text = {'fa':'📖 بعدی', 'en':'📖 Next', 'ar':'📖 التالي'}[lang]
-        markup.add(InlineKeyboardButton(btn_text, callback_data=f'lesson_{idx+1}'))
-    else:
-        btn_text = {'fa':'❓ برو سراغ سوال', 'en':'❓ Go to Questions', 'ar':'❓ اذهب للأسئلة'}[lang]
-        markup.add(InlineKeyboardButton(btn_text, callback_data='start_questions'))
-    return markup
+def question_keyboard(lang_code, options):
+    kb = InlineKeyboardMarkup(row_width=2)
+    for i, opt in enumerate(options):
+        kb.add(InlineKeyboardButton(opt, callback_data=f"answer_{i}"))
+    return kb
 
-def question_markup(q_idx, answers):
-    markup = InlineKeyboardMarkup()
-    for i, ans in enumerate(answers):
-        markup.add(InlineKeyboardButton(ans, callback_data=f'answer_{q_idx}_{i}'))
-    return markup
+@app.route(f"/{API_TOKEN}/", methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return '', 200
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    user_data[message.chat.id] = {'score':0}
-    bot.send_message(message.chat.id, texts['start']['fa'], reply_markup=lang_markup())
+    chat_id = message.chat.id
+    user_data[chat_id] = {'stage': 'choose_lang'}
+    bot.send_message(chat_id, "🌟 سلام! لطفا زبانت رو انتخاب کن:\n🌟 Please select your language:\n🌟 الرجاء اختيار اللغة:", reply_markup=language_keyboard())
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('lang_'))
-def select_language(call):
-    lang = call.data.split('_')[1]
-    user_data[call.message.chat.id]['lang'] = lang
-    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                          text=f"👍 {languages[lang]} انتخاب شد!\n\n{texts['choose_topic'][lang]}",
-                          reply_markup=topic_markup(lang))
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith('topic_'))
-def select_topic(call):
-    topic = call.data.split('_')[1]
+@bot.callback_query_handler(func=lambda call: True)
+def callback_handler(call):
     chat_id = call.message.chat.id
-    lang = user_data[chat_id]['lang']
-    user_data[chat_id]['topic'] = topic
-    user_data[chat_id]['lesson_idx'] = 0
-    user_data[chat_id]['score'] = 0
+    data = call.data
 
-    lesson_text = lessons[topic][lang][0]
-    bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                          text=f"🎉 {topics[topic][lang]} انتخاب شد!\n\n{texts['lesson_intro'][lang]}\n\n{lesson_text}",
-                          reply_markup=next_lesson_markup(0, len(lessons[topic][lang]), lang))
+    # انتخاب زبان
+    if data.startswith("lang_"):
+        lang = data.split("_")[1]
+        user_data[chat_id] = {
+            'lang': lang,
+            'stage': 'choose_topic',
+            'score': 0,
+            'lesson_index': 0,
+            'question_index': 0,
+            'topic': None
+        }
+        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
+                              text={"fa": "موضوع مورد نظرت رو انتخاب کن:", "en": "Choose your topic:", "ar": "اختر موضوعك:"}[lang],
+                              reply_markup=topics_keyboard(lang))
+        return
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('lesson_'))
-def lesson_next(call):
-    idx = int(call.data.split('_')[1])
-    chat_id = call.message.chat.id
-    lang = user_data[chat_id]['lang']
-    topic = user_data[chat_id]['topic']
-    user_data[chat_id]['lesson_idx'] = idx
-    lesson_text = lessons[topic][lang][idx]
-    bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                          text=f"📚 آموزش شماره {idx+1}:\n\n{lesson_text}",
-                          reply_markup=next_lesson_markup(idx, len(lessons[topic][lang]), lang))
+    # انتخاب موضوع
+    if data.startswith("topic_"):
+        topic = data.split("_")[1]
+        lang = user_data.get(chat_id, {}).get('lang', 'fa')
+        user_data[chat_id]['topic'] = topic
+        user_data[chat_id]['stage'] = 'lesson'
+        user_data[chat_id]['lesson_index'] = 0
+        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
+                              text={"fa": f"آموزش شروع میشه... درس ۱:\n\n{lessons[topic][lang][0]}",
+                                    "en": f"Starting lesson... Lesson 1:\n\n{lessons[topic][lang][0]}",
+                                    "ar": f"نبدأ الدرس... الدرس ١:\n\n{lessons[topic][lang][0]}"}[lang])
+        return
 
-@bot.callback_query_handler(func=lambda call: call.data == 'start_questions')
-def start_questions(call):
-    chat_id = call.message.chat.id
-    lang = user_data[chat_id]['lang']
-    topic = user_data[chat_id]['topic']
-    user_data[chat_id]['question_idx'] = 0
-    user_data[chat_id]['score'] = 0
+    # درس بعدی
+    if user_data.get(chat_id, {}).get('stage') == 'lesson':
+        topic = user_data[chat_id]['topic']
+        lang = user_data[chat_id]['lang']
+        idx = user_data[chat_id]['lesson_index'] + 1
+        if idx < 5:
+            user_data[chat_id]['lesson_index'] = idx
+            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
+                                  text=lessons[topic][lang][idx])
+        else:
+            # رفتن به سوالات
+            user_data[chat_id]['stage'] = 'quiz'
+            user_data[chat_id]['question_index'] = 0
+            idx = 0
+            q = lessons[topic]['questions'][idx][lang]
+            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
+                                  text=f"حالا ۵ سوال داریم! 🧐\n\n{q[0]}",
+                                  reply_markup=question_keyboard(lang, q[1]))
+        return
 
-    q_idx = 0
-    q, answers, _ = questions[topic][lang][q_idx]
-    bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                          text=f"{texts['question_intro'][lang]}\n\nسوال ۱:\n{q}",
-                          reply_markup=question_markup(q_idx, answers))
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith('answer_'))
-def answer_question(call):
-    data = call.data.split('_')
-    q_idx = int(data[1])
-    ans_idx = int(data[2])
-    chat_id = call.message.chat.id
-    lang = user_data[chat_id]['lang']
-    topic = user_data[chat_id]['topic']
-
-    correct_ans = questions[topic][lang][q_idx][2]
-
-    if ans_idx == correct_ans:
-        user_data[chat_id]['score'] += 1
-        bot.answer_callback_query(call.id, "👍 درست زدی، عالییی! 🎉")
-    else:
-        bot.answer_callback_query(call.id, "🙈 اوووه، اشتباه شد!")
+    # پاسخ به سوالات
+    if user_data.get(chat_id,
