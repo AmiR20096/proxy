@@ -305,4 +305,4 @@ def answer_question(call):
         user_data[chat_id]['score'] += 1
         bot.answer_callback_query(call.id, "👍 درست زدی، عالییی! 🎉")
     else:
-        bot.answer_callback_query(call.id, "🙈 اوووه، اشتباه شد!
+        bot.answer_callback_query(call.id, "🙈 اوووه، اشتباه شد!")
