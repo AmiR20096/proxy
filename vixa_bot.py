@@ -1,9 +1,10 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+import os
 
-API_TOKEN = '8148296983:AAGeL81w9_RhAf4AsAlywE_YiGx0nE_aksY'
+API_TOKEN = os.getenv('BOT_TOKEN', '8148296983:AAGeL81w9_RhAf4AsAlywE_YiGx0nE_aksY')  # امنیت بیشتر
+
 bot = telebot.TeleBot(API_TOKEN)
-
 user_data = {}
 
 languages = {
@@ -145,6 +146,7 @@ def callback_handler(call):
         internet_code = user_data[chat_id].get('internet', 'wifi')
         send_tutorial(chat_id, lang_code, internet_code)
 
-print("Bot is up and running...")
-
-bot.infinity_polling()
+# اجرای ربات
+if __name__ == "__main__":
+    print("✅ ربات با موفقیت اجرا شد در Render...")
+    bot.infinity_polling()
