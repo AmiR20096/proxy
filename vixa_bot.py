@@ -1,11 +1,16 @@
 import os
 from flask import Flask, request
 import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-API_TOKEN = os.getenv('7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY', 'https://core.telegram.org/bots/api')
+# دریافت توکن از متغیر محیطی TELEGRAM_API_TOKEN
+API_TOKEN = os.getenv('7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY')
+if not API_TOKEN:
+    print("لطفا متغیر محیطی TELEGRAM_API_TOKEN را تنظیم کنید!")
+    exit(1)
 
 bot = telebot.TeleBot(API_TOKEN)
-app = Flask(__name__)
+app = Flask(_name_)
 
 # داده‌های کاربر برای ذخیره زبان و موضوع
 user_data = {}
@@ -18,19 +23,19 @@ languages = {
 
 subjects = {
     'python': {
-        'fa': ['درس ۱: متغیرها 🐍', 'درس ۲: شرط‌ها 🤔', 'درس ۳: حلقه‌ها 🔄', 'درس ۴: توابع 🛠️', 'درس ۵: لیست‌ها 📋'],
-        'en': ['Lesson 1: Variables 🐍', 'Lesson 2: Conditions 🤔', 'Lesson 3: Loops 🔄', 'Lesson 4: Functions 🛠️', 'Lesson 5: Lists 📋'],
-        'ar': ['الدرس ١: المتغيرات 🐍', 'الدرس ٢: الشروط 🤔', 'الدرس ٣: الحلقات 🔄', 'الدرس ٤: الدوال 🛠️', 'الدرس ٥: القوائم 📋']
+        'fa': ['درس ۱: متغیرها 🐍', 'درس ۲: شرط‌ها 🤔', 'درس ۳: حلقه‌ها 🔄', 'درس ۴: توابع 🛠', 'درس ۵: لیست‌ها 📋'],
+        'en': ['Lesson 1: Variables 🐍', 'Lesson 2: Conditions 🤔', 'Lesson 3: Loops 🔄', 'Lesson 4: Functions 🛠', 'Lesson 5: Lists 📋'],
+        'ar': ['الدرس ١: المتغيرات 🐍', 'الدرس ٢: الشروط 🤔', 'الدرس ٣: الحلقات 🔄', 'الدرس ٤: الدوال 🛠', 'الدرس ٥: القوائم 📋']
     },
     'general': {
-        'fa': ['درس ۱: علم و دانش 📚', 'درس ۲: جغرافیا 🌍', 'درس ۳: فناوری ⚙️', 'درس ۴: هنر 🎨', 'درس ۵: ورزش ⚽'],
-        'en': ['Lesson 1: Science 📚', 'Lesson 2: Geography 🌍', 'Lesson 3: Technology ⚙️', 'Lesson 4: Art 🎨', 'Lesson 5: Sports ⚽'],
-        'ar': ['الدرس ١: العلوم 📚', 'الدرس ٢: الجغرافيا 🌍', 'الدرس ٣: التكنولوجيا ⚙️', 'الدرس ٤: الفن 🎨', 'الدرس ٥: الرياضة ⚽']
+        'fa': ['درس ۱: علم و دانش 📚', 'درس ۲: جغرافیا 🌍', 'درس ۳: فناوری ⚙', 'درس ۴: هنر 🎨', 'درس ۵: ورزش ⚽'],
+        'en': ['Lesson 1: Science 📚', 'Lesson 2: Geography 🌍', 'Lesson 3: Technology ⚙', 'Lesson 4: Art 🎨', 'Lesson 5: Sports ⚽'],
+        'ar': ['الدرس ١: العلوم 📚', 'الدرس ٢: الجغرافيا 🌍', 'الدرس ٣: التكنولوجيا ⚙', 'الدرس ٤: الفن 🎨', 'الدرس ٥: الرياضة ⚽']
     },
     'history': {
-        'fa': ['درس ۱: ایران باستان 🏛️', 'درس ۲: دوران اسلامی 🕌', 'درس ۳: انقلاب‌ها ⚔️', 'درس ۴: جنگ‌های جهانی 🌐', 'درس ۵: تاریخ معاصر 🕰️'],
-        'en': ['Lesson 1: Ancient Iran 🏛️', 'Lesson 2: Islamic Era 🕌', 'Lesson 3: Revolutions ⚔️', 'Lesson 4: World Wars 🌐', 'Lesson 5: Modern History 🕰️'],
-        'ar': ['الدرس ١: إيران القديمة 🏛️', 'الدرس ٢: العصر الإسلامي 🕌', 'الدرس ٣: الثورات ⚔️', 'الدرس ٤: الحروب العالمية 🌐', 'الدرس ٥: التاريخ الحديث 🕰️']
+        'fa': ['درس ۱: ایران باستان 🏛', 'درس ۲: دوران اسلامی 🕌', 'درس ۳: انقلاب‌ها ⚔', 'درس ۴: جنگ‌های جهانی 🌐', 'درس ۵: تاریخ معاصر 🕰'],
+        'en': ['Lesson 1: Ancient Iran 🏛', 'Lesson 2: Islamic Era 🕌', 'Lesson 3: Revolutions ⚔', 'Lesson 4: World Wars 🌐', 'Lesson 5: Modern History 🕰'],
+        'ar': ['الدرس ١: إيران القديمة 🏛', 'الدرس ٢: العصر الإسلامي 🕌', 'الدرس ٣: الثورات ⚔', 'الدرس ٤: الحروب العالمية 🌐', 'الدرس ٥: التاريخ الحديث 🕰']
     }
 }
 
@@ -107,11 +112,9 @@ questions = {
 }
 
 stickers = {
-    'correct': 'CAACAgIAAxkBAAEHZvlkUo8ajxQJW6_MLQx5bR14Vbr6EgAC3gADVp29CqxCrpMH9Uz1IwQ',  # استیکر درست
-    'wrong': 'CAACAgIAAxkBAAEHZ0VkUo_4rRXAAUPk_Vmt8DbN6vdCZwAC6AADVp29CrzBrCNUhbhkIwQ'    # استیکر اشتباه
+    'correct': 'CAACAgIAAxkBAAEHZvlkUo8ajxQJW6_MLQx5bR14Vbr6EgAC3gADVp29CqxCrpMH9Uz1IwQ',
+    'wrong': 'CAACAgIAAxkBAAEHZ0VkUo_4rRXAAUPk_Vmt8DbN6vdCZwAC6AADVp29CrzBrCNUhbhkIwQ'
 }
-
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 def language_keyboard():
     kb = InlineKeyboardMarkup(row_width=3)
@@ -230,7 +233,6 @@ def callback_handler(call):
                 'ar': f"🎉 مبروك! نتيجتك: {score}/{total} 🎉\n\nأنت ذكي 😉"
             }
             bot.send_message(chat_id, texts[lang_code])
-            # پاک کردن اطلاعات کاربر برای شروع مجدد
             user_data.pop(chat_id, None)
 
 def send_question(chat_id):
@@ -241,12 +243,11 @@ def send_question(chat_id):
 
     bot.send_message(chat_id, q_text, reply_markup=question_keyboard(lang_code, options))
 
-
-if __name__ == "__main__":
-    # ست کردن Webhook برای Render
-    WEBHOOK_URL_BASE = os.getenv('WEBHOOK_URL')  # مثلا: https://yourapp.onrender.com
+if _name_ == "_main_":
+    # دریافت آدرس وبهوک از متغیر محیطی WEBHOOK_URL
+    WEBHOOK_URL_BASE = os.getenv('https://core.telegram.org/bots/api')
     if not WEBHOOK_URL_BASE:
-        print("لطفا متغیر محیطی WEBHOOK_URL را تنظیم کنید!")
+        print("لطفا متغیر محیطی WEBHOOK_URL را تنظیم کنید! (مثال: https://yourapp.onrender.com)")
         exit(1)
     WEBHOOK_URL_PATH = f"/{API_TOKEN}"
 
