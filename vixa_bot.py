@@ -6,12 +6,11 @@ import threading
 import time
 
 API_TOKEN = "7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY"
-
 if not API_TOKEN:
     print("❌ خطا: متغیر محیطی TELEGRAM_API_TOKEN تنظیم نشده است. لطفاً توکن ربات را در تنظیمات هاست خود اضافه کنید.")
     exit(1)
 
-bot = telebot.TeleBot(API_TOKEN)
+bot = telebot.TeleBot(API_TOKEN, threaded=False)  # threaded=False برای جلوگیری از همزمانی داخلی
 app = Flask(__name__)
 
 # داده‌های کاربر برای ذخیره زبان و موضوع
@@ -255,7 +254,9 @@ def polling():
             time.sleep(5)
 
 if __name__ == "__main__":
+    # اجرای polling در یک Thread جدا
     polling_thread = threading.Thread(target=polling)
     polling_thread.start()
+    
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
