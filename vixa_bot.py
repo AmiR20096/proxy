@@ -1,19 +1,19 @@
-import os
-from flask import Flask
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import threading
 import time
+from flask import Flask
+import os
 
 API_TOKEN = "7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY"
 if not API_TOKEN:
-    print("❌ خطا: متغیر محیطی TELEGRAM_API_TOKEN تنظیم نشده است. لطفاً توکن ربات را در تنظیمات هاست خود اضافه کنید.")
+    print("❌ خطا: توکن ربات تنظیم نشده است.")
     exit(1)
 
-bot = telebot.TeleBot(API_TOKEN, threaded=False)  # threaded=False برای جلوگیری از همزمانی داخلی
+bot = telebot.TeleBot(API_TOKEN, threaded=False)
 app = Flask(__name__)
 
-# داده‌های کاربر برای ذخیره زبان و موضوع
+# داده‌های کاربر برای ذخیره زبان، موضوع، درس و سوالات
 user_data = {}
 
 languages = {
@@ -253,13 +253,9 @@ def polling():
             print(f"Error in polling: {e}")
             time.sleep(5)
 
-bot.remove_webhook()
-bot.polling(none_stop=True)
-
 if __name__ == "__main__":
-    # اجرای polling در یک Thread جدا
     polling_thread = threading.Thread(target=polling)
     polling_thread.start()
-    
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
