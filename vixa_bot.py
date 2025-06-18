@@ -1,152 +1,308 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-import os
 
-API_TOKEN = os.getenv('BOT_TOKEN', '7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY')
-
+API_TOKEN = "7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY"
 bot = telebot.TeleBot(API_TOKEN)
+
 user_data = {}
 
 languages = {
-    'fa': 'فارسی',
-    'en': 'English',
-    'ar': 'العربية'
+    'fa': '🇮🇷 فارسی',
+    'en': '🇺🇸 English',
+    'ar': '🇸🇦 العربية'
 }
 
-internet_types = {
-    'wifi': {'fa': 'وای‌فای', 'en': 'Wi-Fi', 'ar': 'واي فاي'},
-    'irancell': {'fa': 'ایرانسل', 'en': 'Irancell', 'ar': 'ايرانسل'},
-    'mci': {'fa': 'همراه اول', 'en': 'MCI', 'ar': 'همراه اول'},
-    'raitel': {'fa': 'رایتل', 'en': 'RighTel', 'ar': 'رايتل'}
+topics = {
+    'python': {'fa':'🐍 آموزش پایتون', 'en':'🐍 Python Lessons', 'ar':'🐍 دروس بايثون'},
+    'general': {'fa':'🧠 اطلاعات عمومی', 'en':'🧠 General Knowledge', 'ar':'🧠 المعرفة العامة'},
+    'history': {'fa':'📜 تاریخ', 'en':'📜 History', 'ar':'📜 التاريخ'}
 }
 
-proxies = {
-    'wifi': [
-        ("185.195.232.44:8080", "198.50.163.192:3128"),
-        ("103.216.82.110:6667", "103.250.166.50:6667"),
-        ("192.140.32.101:1080", "104.223.145.100:8080"),
-        ("91.205.239.36:3128", "198.50.163.192:3128"),
-        ("103.145.77.53:80", "178.33.136.99:3128")
-    ],
-    'irancell': [
-        ("51.89.144.230:8080", "51.89.144.231:8080"),
-        ("51.158.186.141:5836", "51.158.123.35:8811"),
-        ("185.189.210.74:80", "178.62.193.19:3128"),
-        ("103.216.82.140:6667", "103.216.82.137:6667"),
-        ("103.48.70.198:6667", "103.48.70.199:6667")
-    ],
-    'mci': [
-        ("103.216.82.210:6667", "103.216.82.211:6667"),
-        ("103.48.70.244:6667", "103.48.70.245:6667"),
-        ("45.77.141.123:3128", "45.77.141.124:3128"),
-        ("103.216.82.135:6667", "103.216.82.136:6667"),
-        ("45.77.142.125:3128", "45.77.142.126:3128")
-    ],
-    'raitel': [
-        ("103.216.82.230:6667", "103.216.82.231:6667"),
-        ("103.48.70.254:6667", "103.48.70.255:6667"),
-        ("45.77.143.123:3128", "45.77.143.124:3128"),
-        ("103.216.82.240:6667", "103.216.82.241:6667"),
-        ("45.77.144.125:3128", "45.77.144.126:3128")
-    ]
+# پیام‌ها به سه زبان (با طنز و ایموجی)
+texts = {
+    'start': {
+        'fa': "🤣🤣 سلام! اول یه زبون انتخاب کن که من باهات حال کنم!",
+        'en': "🤣🤣 Hey! Pick a language so I can vibe with you!",
+        'ar': "🤣🤣 هلا! أولاً اختار اللغة عشان نضحك سوى!"
+    },
+    'choose_topic': {
+        'fa': "🔥 موضوع رو انتخاب کن که بترکونی!",
+        'en': "🔥 Choose a topic to rock!",
+        'ar': "🔥 اختر موضوع عشان تكون فنان!"
+    },
+    'lesson_intro': {
+        'fa': "📚 بفرما آموزش‌ها! آماده برای خفن بازی؟ 😁",
+        'en': "📚 Here are your lessons! Ready to be awesome? 😁",
+        'ar': "📚 هذه دروسك! جاهز لتكون رائع؟ 😁"
+    },
+    'question_intro': {
+        'fa': "❓ سوال‌ها میان! جواب بده وگرنه مسخره‌ات می‌کنم 😂",
+        'en': "❓ Questions coming! Answer or I roast you 😂",
+        'ar': "❓ الأسئلة جاية! جاوب وإلا رح أسخرك 😂"
+    },
+    'score_good': {
+        'fa': "🌟 تو نابغی! ستاره‌ی منی! ⭐️⭐️⭐️",
+        'en': "🌟 You're a genius! My star! ⭐️⭐️⭐️",
+        'ar': "🌟 أنت عبقري! نجمتي! ⭐️⭐️⭐️"
+    },
+    'score_ok': {
+        'fa': "👏 خوب بود، بهتر از اینم می‌تونی!",
+        'en': "👏 Good job, you can do better!",
+        'ar': "👏 عمل جيد، يمكنك أن تكون أفضل!"
+    },
+    'score_bad': {
+        'fa': "😂 اوووه، بیا یه قهوه بخور و دوباره تلاش کن!",
+        'en': "😂 Oh no, grab a coffee and try again!",
+        'ar': "😂 أوه لا، اشرب قهوة وحاول مرة أخرى!"
+    }
 }
 
-def language_keyboard():
-    kb = InlineKeyboardMarkup(row_width=3)
+# آموزش‌ها به سه زبان (هر موضوع 5 آموزش)
+lessons = {
+    'python': {
+        'fa': [
+            "👨‍💻 پایتون مثل موزیک رپ جذابه! شروع کن با print('سلام دنیا') 😎",
+            "🔍 متغیرها مثل جیب‌پول تو هستند!",
+            "🎯 شرط‌ها مثل پلیس راهنمایی: if/else",
+            "🔄 حلقه‌ها مثل چرخ و فلک!",
+            "📚 فانکشن‌ها مثل ربات‌های دستیار!"
+        ],
+        'en': [
+            "👨‍💻 Python is like rap music! Start with print('Hello World') 😎",
+            "🔍 Variables are like your wallet!",
+            "🎯 Conditions are like traffic cops: if/else",
+            "🔄 Loops are like a carousel!",
+            "📚 Functions are like assistant robots!"
+        ],
+        'ar': [
+            "👨‍💻 بايثون مثل الراب! ابدأ بـ print('مرحبا بالعالم') 😎",
+            "🔍 المتغيرات مثل محفظتك!",
+            "🎯 الشروط مثل رجال المرور: if/else",
+            "🔄 الحلقات مثل الدوامة!",
+            "📚 الدوال مثل الروبوتات المساعدة!"
+        ]
+    },
+    'general': {
+        'fa': [
+            "🌍 زمین گرده، بعضیا هنوز فکر می‌کنن صافه!",
+            "🚀 اولین انسان روی ماه نیل آرمسترانگ بود!",
+            "📱 گوشی هوشمند ۲۵ سال پیش نبود!",
+            "🍕 پیتزا از ایتالیاست!",
+            "🧠 مغز انسان سریع‌تر از اینترنت 5G است!"
+        ],
+        'en': [
+            "🌍 Earth is round, some still think it's flat!",
+            "🚀 Neil Armstrong was first on the moon!",
+            "📱 Smartphones didn't exist 25 years ago!",
+            "🍕 Pizza is from Italy!",
+            "🧠 The brain is faster than 5G internet!"
+        ],
+        'ar': [
+            "🌍 الأرض مستديرة، والبعض لا يصدق!",
+            "🚀 نيل آرمسترونغ كان أول من وصل للقمر!",
+            "📱 الهواتف الذكية لم تكن موجودة منذ 25 سنة!",
+            "🍕 البيتزا من إيطاليا!",
+            "🧠 الدماغ أسرع من إنترنت 5G!"
+        ]
+    },
+    'history': {
+        'fa': [
+            "🏺 مصر باستان پر از راز!",
+            "⚔️ جنگ‌های صلیبی داستان خون و دود!",
+            "👑 شاهان قدیم استرس داشتند!",
+            "🕰️ ساعت اختراع شد تا دیر نکنیم!",
+            "🚢 کشتی تایتانیک داستان غرق شدن!"
+        ],
+        'en': [
+            "🏺 Ancient Egypt full of secrets!",
+            "⚔️ Crusades were bloody wars!",
+            "👑 Old kings were stressed!",
+            "🕰️ Clocks invented to stop being late!",
+            "🚢 Titanic was a sinking story!"
+        ],
+        'ar': [
+            "🏺 مصر القديمة مليئة بالأسرار!",
+            "⚔️ الحروب الصليبية كانت دموية!",
+            "👑 الملوك القدماء كانوا متوترين!",
+            "🕰️ اخترعوا الساعة لعدم التأخير!",
+            "🚢 قصة غرق التايتانيك!"
+        ]
+    }
+}
+
+# سوالات به سه زبان: هر سوال به صورت (سوال, [جواب‌ها], جواب_درست_اندیس)
+questions = {
+    'python': {
+        'fa': [
+            ("print('سلام') چه کاری می‌کند؟", ['سلام را چاپ می‌کند', 'صدا می‌دهد', 'هیچ کاری نمی‌کند'], 0),
+            ("کدام متغیر درست است؟", ['1number', 'number1', 'number-1'], 1),
+            ("for چیست؟", ['حلقه', 'متغیر', 'تابع'], 0),
+            ("تابع چیست؟", ['کد تکراری', 'دستور شرطی', 'نوع داده'], 0),
+            ("کدام نماد برای نظر است؟", ['#', '//', '/*'], 0)
+        ],
+        'en': [
+            ("What does print('Hello') do?", ['Prints Hello', 'Makes sound', 'Does nothing'], 0),
+            ("Which variable name is correct?", ['1number', 'number1', 'number-1'], 1),
+            ("What is 'for'?", ['Loop', 'Variable', 'Function'], 0),
+            ("What is a function?", ['Reusable code', 'Condition', 'Data type'], 0),
+            ("Which symbol is comment?", ['#', '//', '/*'], 0)
+        ],
+        'ar': [
+            ("ماذا يفعل print('مرحبا')؟", ['يطبع مرحبا', 'يصدر صوت', 'لا يفعل شيئاً'], 0),
+            ("أي اسم متغير صحيح؟", ['1number', 'number1', 'number-1'], 1),
+            ("ما هو 'for'؟", ['حلقة', 'متغير', 'دالة'], 0),
+            ("ما هي الدالة؟", ['كود قابل لإعادة الاستخدام', 'شرط', 'نوع بيانات'], 0),
+            ("أي رمز للتعليق؟", ['#', '//', '/*'], 0)
+        ]
+    },
+    'general': {
+        'fa': [
+            ("اولین ماه‌نورد کی بود؟", ['نیل آرمسترانگ', 'یوری گاگارین', 'فضانورد بازنشسته'], 0),
+            ("زمین گرد است یا صاف؟", ['صاف', 'گرد', 'مربع'], 1),
+            ("اولین تلفن همراه کی ساخته شد؟", ['1983', '1990', '2000'], 0),
+            ("پیتزا از کجاست؟", ['ایتالیا', 'فرانسه', 'آلمان'], 0),
+            ("مغز چقدر سریع است؟", ['کند', 'سریع', 'متوسط'], 1)
+        ],
+        'en': [
+            ("Who was the first moonwalker?", ['Neil Armstrong', 'Yuri Gagarin', 'Retired astronaut'], 0),
+            ("Is Earth flat or round?", ['Flat', 'Round', 'Square'], 1),
+            ("When was the first mobile phone made?", ['1983', '1990', '2000'], 0),
+            ("Where is pizza from?", ['Italy', 'France', 'Germany'], 0),
+            ("How fast is the brain?", ['Slow', 'Fast', 'Medium'], 1)
+        ],
+        'ar': [
+            ("من كان أول من مشى على القمر؟", ['نيل آرمسترونغ', 'يوري غاغارين', 'رائد فضاء متقاعد'], 0),
+            ("هل الأرض مسطحة أم مستديرة؟", ['مسطحة', 'مستديرة', 'مربعة'], 1),
+            ("متى تم صنع أول هاتف محمول؟", ['1983', '1990', '2000'], 0),
+            ("من أين تأتي البيتزا؟", ['إيطاليا', 'فرنسا', 'ألمانيا'], 0),
+            ("ما سرعة الدماغ؟", ['بطيء', 'سريع', 'متوسط'], 1)
+        ]
+    },
+    'history': {
+        'fa': [
+            ("مومیایی‌ها متعلق به کدام کشورند؟", ['مصر', 'یونان', 'ایران'], 0),
+            ("جنگ‌های صلیبی مربوط به چه قرنی است؟", ['قرن 11', 'قرن 15', 'قرن 19'], 0),
+            ("کدام شاه قدیم نبود؟", ['کوروش', 'الکساندر', 'پادشاه فوتبال'], 2),
+            ("ساعت برای چه اختراع شد؟", ['تنظیم زمان', 'فروش', 'تزئین'], 0),
+            ("تایتانیک چه بود؟", ['کشتی', 'هواپیما', 'قطار'], 0)
+        ],
+        'en': [
+            ("Mummies belong to which country?", ['Egypt', 'Greece', 'Iran'], 0),
+            ("The Crusades happened in which century?", ['11th', '15th', '19th'], 0),
+            ("Which one was NOT an old king?", ['Cyrus', 'Alexander', 'Football King'], 2),
+            ("Why was the clock invented?", ['To tell time', 'For sale', 'Decoration'], 0),
+            ("What was Titanic?", ['Ship', 'Plane', 'Train'], 0)
+        ],
+        'ar': [
+            ("إلى أي دولة تنتمي المومياوات؟", ['مصر', 'اليونان', 'إيران'], 0),
+            ("في أي قرن حدثت الحروب الصليبية؟", ['الحادي عشر', 'الخامس عشر', 'التاسع عشر'], 0),
+            ("أيهم لم يكن ملكاً قديماً؟", ['كورش', 'الإسكندر', 'ملك كرة القدم'], 2),
+            ("لماذا اخترع الساعة؟", ['لتحديد الوقت', 'للبيع', 'للزينة'], 0),
+            ("ما هو التايتانيك؟", ['سفينة', 'طائرة', 'قطار'], 0)
+        ]
+    }
+}
+
+stickers = {
+    'good': 'CAACAgIAAxkBAAEFq1JkDjQl_Jr9q5tTzYmICZy-0lyRAwAC3QADr8ZSGwPfuZ1U_4aQHgQ',
+    'bad': 'CAACAgIAAxkBAAEFq1NkDjS-NHvhC8zGCHH3br4ONNg3CQACBAADr8ZSGzBPaSWwsOaMHgQ'
+}
+
+def lang_markup():
+    markup = InlineKeyboardMarkup(row_width=3)
     for code, name in languages.items():
-        kb.add(InlineKeyboardButton(name, callback_data=f"lang_{code}"))
-    return kb
+        markup.add(InlineKeyboardButton(name, callback_data=f'lang_{code}'))
+    return markup
 
-def internet_keyboard(lang_code):
-    kb = InlineKeyboardMarkup(row_width=2)
-    for code, names in internet_types.items():
-        kb.add(InlineKeyboardButton(names[lang_code], callback_data=f"internet_{code}"))
-    return kb
+def topic_markup(lang):
+    markup = InlineKeyboardMarkup(row_width=2)
+    for key in topics.keys():
+        markup.add(InlineKeyboardButton(topics[key][lang], callback_data=f'topic_{key}'))
+    return markup
 
-def send_proxies(chat_id, internet_code, lang_code):
-    proxy_list = proxies.get(internet_code, [])
-    if not proxy_list:
-        texts = {
-            'fa': "متأسفانه پروکسی برای این نوع اینترنت موجود نیست.",
-            'en': "Sorry, no proxies available for this internet type.",
-            'ar': "عذراً، لا توجد بروكسيات متاحة لهذا النوع من الانترنت."
-        }
-        bot.send_message(chat_id, texts[lang_code])
-        return
-    texts = {
-        'fa': "پروکسی‌های مناسب برای اینترنت شما:\n\n",
-        'en': "Suitable proxies for your internet:\n\n",
-        'ar': "البروكسيات المناسبة لانترنتك:\n\n"
-    }
-    text = texts[lang_code]
-    for i, (primary, secondary) in enumerate(proxy_list, 1):
-        text += f"{i}. Primary: {primary}\n   Secondary: {secondary}\n\n"
-    bot.send_message(chat_id, text, reply_markup=InlineKeyboardMarkup().add(
-        InlineKeyboardButton({'fa':'آموزش','en':'Tutorial','ar':'تعليم'}[lang_code], callback_data="show_tutorial")
-    ))
+def next_lesson_markup(idx, total, lang):
+    markup = InlineKeyboardMarkup()
+    if idx < total -1:
+        # متن دکمه بعدی به زبان انتخابی
+        btn_text = {'fa':'📖 بعدی', 'en':'📖 Next', 'ar':'📖 التالي'}[lang]
+        markup.add(InlineKeyboardButton(btn_text, callback_data=f'lesson_{idx+1}'))
+    else:
+        btn_text = {'fa':'❓ برو سراغ سوال', 'en':'❓ Go to Questions', 'ar':'❓ اذهب للأسئلة'}[lang]
+        markup.add(InlineKeyboardButton(btn_text, callback_data='start_questions'))
+    return markup
 
-def send_tutorial(chat_id, lang_code, internet_code):
-    texts = {
-        'fa': f"""آموزش تنظیم DNS Changer برای اینترنت {internet_types[internet_code]['fa']}:
-1. اپلیکیشن DNS Changer را از گوگل پلی یا بازار نصب کنید.
-2. اپلیکیشن را باز کنید.
-3. در قسمت Primary DNS، آدرس پروکسی اول را وارد کنید.
-4. در قسمت Secondary DNS، آدرس پروکسی دوم را وارد کنید.
-5. روی دکمه Start کلیک کنید تا اتصال فعال شود.
-6. برای قطع اتصال روی Stop کلیک کنید.
-توجه: حتما تنظیمات اینترنت گوشی شما فعال باشد.""",
-        'en': f"""Tutorial for setting up DNS Changer on {internet_types[internet_code]['en']} internet:
-1. Install DNS Changer app from Google Play or App Store.
-2. Open the app.
-3. Enter primary proxy address in Primary DNS field.
-4. Enter secondary proxy address in Secondary DNS field.
-5. Tap Start to activate connection.
-6. Tap Stop to disconnect.
-Note: Ensure your phone internet settings are enabled.""",
-        'ar': f"""تعليم إعداد DNS Changer لانترنت {internet_types[internet_code]['ar']}:
-1. ثبت تطبيق DNS Changer من Google Play أو App Store.
-2. افتح التطبيق.
-3. أدخل البروكسي الأساسي في حقل Primary DNS.
-4. أدخل البروكسي الثانوي في حقل Secondary DNS.
-5. اضغط Start لتفعيل الاتصال.
-6. اضغط Stop لقطع الاتصال.
-ملاحظة: تأكد من تفعيل إعدادات الانترنت في هاتفك."""
-    }
-    bot.send_message(chat_id, texts[lang_code])
+def question_markup(q_idx, answers):
+    markup = InlineKeyboardMarkup()
+    for i, ans in enumerate(answers):
+        markup.add(InlineKeyboardButton(ans, callback_data=f'answer_{q_idx}_{i}'))
+    return markup
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    user_data[message.chat.id] = {}
-    bot.send_message(message.chat.id, "لطفا زبان مورد نظر خود را انتخاب کنید / Please choose your language / الرجاء اختيار اللغة:", reply_markup=language_keyboard())
+    user_data[message.chat.id] = {'score':0}
+    bot.send_message(message.chat.id, texts['start']['fa'], reply_markup=lang_markup())
 
-@bot.callback_query_handler(func=lambda call: True)
-def callback_handler(call):
+@bot.callback_query_handler(func=lambda call: call.data.startswith('lang_'))
+def select_language(call):
+    lang = call.data.split('_')[1]
+    user_data[call.message.chat.id]['lang'] = lang
+    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                          text=f"👍 {languages[lang]} انتخاب شد!\n\n{texts['choose_topic'][lang]}",
+                          reply_markup=topic_markup(lang))
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('topic_'))
+def select_topic(call):
+    topic = call.data.split('_')[1]
     chat_id = call.message.chat.id
-    data = call.data
+    lang = user_data[chat_id]['lang']
+    user_data[chat_id]['topic'] = topic
+    user_data[chat_id]['lesson_idx'] = 0
+    user_data[chat_id]['score'] = 0
 
-    if data.startswith("lang_"):
-        lang_code = data.split("_")[1]
-        user_data[chat_id]['lang'] = lang_code
-        bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                              text={
-                                  'fa': 'لطفا نوع اینترنت خود را انتخاب کنید:',
-                                  'en': 'Please choose your internet type:',
-                                  'ar': 'يرجى اختيار نوع الانترنت:'
-                              }[lang_code],
-                              reply_markup=internet_keyboard(lang_code))
+    lesson_text = lessons[topic][lang][0]
+    bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
+                          text=f"🎉 {topics[topic][lang]} انتخاب شد!\n\n{texts['lesson_intro'][lang]}\n\n{lesson_text}",
+                          reply_markup=next_lesson_markup(0, len(lessons[topic][lang]), lang))
 
-    elif data.startswith("internet_"):
-        internet_code = data.split("_")[1]
-        user_data[chat_id]['internet'] = internet_code
-        lang_code = user_data[chat_id].get('lang', 'fa')
-        send_proxies(chat_id, internet_code, lang_code)
+@bot.callback_query_handler(func=lambda call: call.data.startswith('lesson_'))
+def lesson_next(call):
+    idx = int(call.data.split('_')[1])
+    chat_id = call.message.chat.id
+    lang = user_data[chat_id]['lang']
+    topic = user_data[chat_id]['topic']
+    user_data[chat_id]['lesson_idx'] = idx
+    lesson_text = lessons[topic][lang][idx]
+    bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
+                          text=f"📚 آموزش شماره {idx+1}:\n\n{lesson_text}",
+                          reply_markup=next_lesson_markup(idx, len(lessons[topic][lang]), lang))
 
-    elif data == "show_tutorial":
-        lang_code = user_data[chat_id].get('lang', 'fa')
-        internet_code = user_data[chat_id].get('internet', 'wifi')
-        send_tutorial(chat_id, lang_code, internet_code)
+@bot.callback_query_handler(func=lambda call: call.data == 'start_questions')
+def start_questions(call):
+    chat_id = call.message.chat.id
+    lang = user_data[chat_id]['lang']
+    topic = user_data[chat_id]['topic']
+    user_data[chat_id]['question_idx'] = 0
+    user_data[chat_id]['score'] = 0
 
-if __name__ == "__main__":
-    print("✅ ربات با موفقیت اجرا شد در Render...")
-    bot.remove_webhook()   # اضافه کردن این خط برای حذف webhook فعال
-    bot.infinity_polling()
+    q_idx = 0
+    q, answers, _ = questions[topic][lang][q_idx]
+    bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
+                          text=f"{texts['question_intro'][lang]}\n\nسوال ۱:\n{q}",
+                          reply_markup=question_markup(q_idx, answers))
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('answer_'))
+def answer_question(call):
+    data = call.data.split('_')
+    q_idx = int(data[1])
+    ans_idx = int(data[2])
+    chat_id = call.message.chat.id
+    lang = user_data[chat_id]['lang']
+    topic = user_data[chat_id]['topic']
+
+    correct_ans = questions[topic][lang][q_idx][2]
+
+    if ans_idx == correct_ans:
+        user_data[chat_id]['score'] += 1
+        bot.answer_callback_query(call.id, "👍 درست زدی، عالییی! 🎉")
+    else:
+        bot.answer_callback_query(call.id, "🙈 اوووه، اشتباه شد!
