@@ -2,7 +2,7 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import os
 
-API_TOKEN = os.getenv('BOT_TOKEN', '8148296983:AAGeL81w9_RhAf4AsAlywE_YiGx0nE_aksY')
+API_TOKEN = os.getenv('BOT_TOKEN', '7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY')
 
 bot = telebot.TeleBot(API_TOKEN)
 user_data = {}
