@@ -10,7 +10,7 @@ if not API_TOKEN:
     exit(1)
 
 bot = telebot.TeleBot(API_TOKEN)
-app = Flask(_name_)
+app = Flask(__name__)
 
 # داده‌های کاربر برای ذخیره زبان و موضوع
 user_data = {}
@@ -243,9 +243,9 @@ def send_question(chat_id):
 
     bot.send_message(chat_id, q_text, reply_markup=question_keyboard(lang_code, options))
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     # دریافت آدرس وبهوک از متغیر محیطی WEBHOOK_URL
-    WEBHOOK_URL_BASE = os.getenv('https://core.telegram.org/bots/api')
+    WEBHOOK_URL_BASE = os.getenv('https://myapp.onrender.com')
     if not WEBHOOK_URL_BASE:
         print("لطفا متغیر محیطی WEBHOOK_URL را تنظیم کنید! (مثال: https://yourapp.onrender.com)")
         exit(1)
