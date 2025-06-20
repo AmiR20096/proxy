@@ -3,7 +3,7 @@ import requests
 
 app = Flask(__name__)
 
-TOKEN = "MYKuAXCjDbOg9vUJbhvM2rEY1VT7QbSRoaLpxlVO"
+TOKEN = "1776281842:MYKuAXCjDbOg9vUJbhvM2rEY1VT7QbSRoaLpxlVO"
 
 API_URL = f'https://tapi.bale.ai/bot{TOKEN}'
 
