@@ -6,28 +6,26 @@ API_TOKEN = "7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY"
 bot = telebot.TeleBot(API_TOKEN)
 
 @bot.message_handler(commands=['start'])
-def send_welcome(message):
+def start(message):
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("🎯 دریافت DNS", callback_data='get_dns'))
-    bot.send_message(
-        message.chat.id,
-        "سلام 👋\nبه ربات تنظیم DNS خوش آمدی!\nبرای دریافت DNS مخصوص عبور از فیلترینگ روی دکمه زیر بزن.",
-        reply_markup=markup
-    )
+    bot.send_message(message.chat.id, 
+                     "سلام! به ربات تنظیم DNS خوش آمدی.\nبرای دریافت DNS روی دکمه زیر بزن.", 
+                     reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data == 'get_dns')
-def send_dns_list(call):
-    dns_list = """🔐 بهترین DNSها برای عبور از فیلترینگ و افزایش سرعت:
+def send_dns(call):
+    dns_text = """🔐 DNSهای پیشنهادی:
 
 1️⃣ Cloudflare: 1.1.1.1 / 1.0.0.1  
 2️⃣ NextDNS: 45.90.28.0 / 45.90.30.0  
-3️⃣ AdGuard DNS: 94.140.14.14 / 94.140.15.15  
-4️⃣ Alternate DNS: 76.76.19.19 / 76.223.122.150  
+3️⃣ AdGuard: 94.140.14.14 / 94.140.15.15  
+4️⃣ Alternate: 76.76.19.19 / 76.223.122.150  
 5️⃣ OpenDNS: 208.67.222.222 / 208.67.220.220  
 6️⃣ Google DNS: 8.8.8.8 / 8.8.4.4  
 7️⃣ Quad9 DNS: 9.9.9.9 / 149.112.112.112
 """
-    bot.send_message(call.message.chat.id, dns_list)
+    bot.send_message(call.message.chat.id, dns_text)
 
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("📘 آموزش تنظیم DNS", callback_data='how_to'))
