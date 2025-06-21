@@ -2,7 +2,7 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from deep_translator import GoogleTranslator
 
-API_TOKEN = 'توکن_ربات_تو'
+API_TOKEN = "7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY"
 
 bot = telebot.TeleBot(API_TOKEN)
 user_data = {}
