@@ -94,7 +94,9 @@ TRANSLATION_LANGS = {
     'Chinese': 'zh-cn',
     'Hindi': 'hi',
     'Urdu': 'ur',
+    'Hebrew': 'he',   # زبان عبری اضافه شد
 }
+
 
 def get_keyboard(options):
     markup = ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
