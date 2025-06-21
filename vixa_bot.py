@@ -9,21 +9,21 @@ user_data = {}
 
 # زبان‌های قابل انتخاب با کدهای استاندارد
 LANGUAGE_OPTIONS = {
-    'فارسی': 'fa',
-    'العربية': 'ar',
-    'English': 'en',
-    'Español': 'es',
-    'Français': 'fr',
-    'Deutsch': 'de',
-    'Italiano': 'it',
-    'Português': 'pt',
-    'Русский': 'ru',
-    'Türkçe': 'tr',
-    '日本語': 'ja',
-    '한국어': 'ko',
-    '中文': 'zh-cn',
-    'Hindi': 'hi',
-    'اردو': 'ur',
+    'فارسی (Iranian Persian)': 'fa',
+    'العربية (Arabic)': 'ar',
+    'English (English)': 'en',
+    'Español (Spanish - Spain & Latin America)': 'es',
+    'Français (French)': 'fr',
+    'Deutsch (German)': 'de',
+    'Italiano (Italian)': 'it',
+    'Português (Portuguese - Portugal & Brazil)': 'pt',
+    'Русский (Russian)': 'ru',
+    'Türkçe (Turkish)': 'tr',
+    '日本語 (Japanese)': 'ja',
+    '한국어 (Korean)': 'ko',
+    '中文 (Chinese - Mandarin)': 'zh-cn',
+    'Hindi (Hindi - India)': 'hi',
+    'اردو (Urdu - Pakistan & India)': 'ur',
 }
 
 def get_language_keyboard(options):
