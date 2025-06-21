@@ -6,7 +6,7 @@ import time
 from flask import Flask
 import threading
 
-API_TOKEN = "توکن_ربات_تو_اینجا_قرار_بده"
+API_TOKEN = "7233257940:AAEjk8rEmNsUGLwXWT8-s8KXSMx9ZoRBmUg"
 
 def delete_webhook():
     url = f"https://api.telegram.org/bot{API_TOKEN}/deleteWebhook"
