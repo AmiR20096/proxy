@@ -7,6 +7,7 @@ API_TOKEN = "7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY"
 bot = telebot.TeleBot(API_TOKEN)
 user_data = {}
 
+# زبان‌های قابل انتخاب با کدهای استاندارد
 LANGUAGE_OPTIONS = {
     'فارسی': 'fa',
     'العربية': 'ar',
@@ -35,9 +36,11 @@ def get_language_keyboard(options):
 def start(message):
     user_data[message.chat.id] = {}
     markup = get_language_keyboard(['فارسی', 'العربية', 'English'])
-    bot.send_message(message.chat.id,
-                     "🌐 لطفاً زبان رابط کاربری را انتخاب کن:",
-                     reply_markup=markup)
+    bot.send_message(
+        message.chat.id,
+        "🌐 لطفاً زبان رابط کاربری را انتخاب کن:",
+        reply_markup=markup
+    )
 
 @bot.message_handler(func=lambda m: m.chat.id in user_data and 'ui_lang' not in user_data[m.chat.id])
 def set_ui_lang(message):
@@ -47,7 +50,11 @@ def set_ui_lang(message):
         return
     user_data[message.chat.id]['ui_lang'] = text
     markup = get_language_keyboard(list(LANGUAGE_OPTIONS.keys()))
-    bot.send_message(message.chat.id, "🌟 زبان مبدا (متن اصلی) را انتخاب کن:", reply_markup=markup)
+    bot.send_message(
+        message.chat.id,
+        "🌟 زبان مبدا (متن اصلی) را انتخاب کن:",
+        reply_markup=markup
+    )
 
 @bot.message_handler(func=lambda m: m.chat.id in user_data and 'src_lang' not in user_data[m.chat.id])
 def set_src_lang(message):
@@ -57,7 +64,11 @@ def set_src_lang(message):
         return
     user_data[message.chat.id]['src_lang'] = LANGUAGE_OPTIONS[text]
     markup = get_language_keyboard(list(LANGUAGE_OPTIONS.keys()))
-    bot.send_message(message.chat.id, "🌟 زبان مقصد (برای ترجمه) را انتخاب کن:", reply_markup=markup)
+    bot.send_message(
+        message.chat.id,
+        "🌟 زبان مقصد (برای ترجمه) را انتخاب کن:",
+        reply_markup=markup
+    )
 
 @bot.message_handler(func=lambda m: m.chat.id in user_data and 'dest_lang' not in user_data[m.chat.id])
 def set_dest_lang(message):
@@ -68,7 +79,7 @@ def set_dest_lang(message):
     user_data[message.chat.id]['dest_lang'] = LANGUAGE_OPTIONS[text]
     bot.send_message(message.chat.id, "✍️ لطفاً متنی که می‌خواهی ترجمه شود را ارسال کن:")
 
-@bot.message_handler(func=lambda m: m.chat.id in user_data and all(k in user_data[m.chat.id] for k in ['src_lang','dest_lang']))
+@bot.message_handler(func=lambda m: m.chat.id in user_data and all(k in user_data[m.chat.id] for k in ['src_lang', 'dest_lang']))
 def translate_text(message):
     data = user_data[message.chat.id]
     try:
