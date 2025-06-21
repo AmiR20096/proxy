@@ -2,28 +2,28 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from deep_translator import GoogleTranslator
 import requests
-import time
-from flask import Flask
 import threading
+from flask import Flask
 
 API_TOKEN = "7233257940:AAGUhJz2HfVggaJF84prMsfBKSJ5fIsEdnI"
 
+# حذف وبهوک قبلی (برای جلوگیری از خطای 409)
 def delete_webhook():
     url = f"https://api.telegram.org/bot{API_TOKEN}/deleteWebhook"
     try:
-        response = requests.get(url)
-        print("🔧 Webhook delete response:", response.text)
+        r = requests.get(url)
+        print("Webhook delete response:", r.json())
     except Exception as e:
-        print("⚠️ Couldn't delete webhook:", e)
+        print("Webhook delete failed:", e)
 
-# حذف وبهوک قبل از شروع ربات
 delete_webhook()
-time.sleep(1)  # کمی صبر کن تا وبهوک حذف بشه
 
 bot = telebot.TeleBot(API_TOKEN)
+app = Flask(__name__)
 
 user_data = {}
 
+# پیام‌ها به چند زبان
 MESSAGES = {
     'choose_ui_lang': {
         'fa': "🌐 لطفاً زبان رابط کاربری را انتخاب کن:",
@@ -73,9 +73,9 @@ MESSAGES = {
 }
 
 LANGUAGE_OPTIONS = {
-    'فارسی (Iran)': 'fa',
-    'العربية (Arabic)': 'ar',
-    'English (English)': 'en',
+    'فارسی': 'fa',
+    'العربية': 'ar',
+    'English': 'en'
 }
 
 TRANSLATION_LANGS = {
@@ -94,7 +94,7 @@ TRANSLATION_LANGS = {
     'Chinese': 'zh-cn',
     'Hindi': 'hi',
     'Urdu': 'ur',
-    'Hebrew': 'he',
+    'Hebrew': 'he'
 }
 
 def get_keyboard(options):
@@ -154,7 +154,7 @@ def translate_text(message):
     except Exception as e:
         bot.send_message(message.chat.id, MESSAGES['error_translation'][lang].format(str(e)))
 
-# ساخت وب‌سرور ساده Flask برای جلوگیری از خوابیدن برنامه روی Render
+# ساخت وب‌سرور ساده Flask برای جلوگیری از خوابیدن برنامه (مثلاً روی Render)
 app = Flask(__name__)
 
 @app.route('/')
@@ -167,5 +167,5 @@ def run_flask():
 # اجرای وب‌سرور در ترد جداگانه
 threading.Thread(target=run_flask).start()
 
-# اجرای ربات تلگرام با polling
+# اجرای ربات با polling (دریافت پیام‌ها)
 bot.polling(none_stop=True)
