@@ -6,7 +6,7 @@ import time
 from flask import Flask
 import threading
 
-API_TOKEN = "7233257940:AAEjk8rEmNsUGLwXWT8-s8KXSMx9ZoRBmUg"
+API_TOKEN = "توکن_ربات_تو_اینجا_قرار_بده"
 
 def delete_webhook():
     url = f"https://api.telegram.org/bot{API_TOKEN}/deleteWebhook"
@@ -16,9 +16,9 @@ def delete_webhook():
     except Exception as e:
         print("⚠️ Couldn't delete webhook:", e)
 
-# حذف وبهوک قبل از ساخت ربات
+# حذف وبهوک قبل از شروع ربات
 delete_webhook()
-time.sleep(1)  # کمی صبر کن تا وبهوک کامل حذف شود
+time.sleep(1)  # کمی صبر کن تا وبهوک حذف بشه
 
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -79,8 +79,8 @@ LANGUAGE_OPTIONS = {
 }
 
 TRANSLATION_LANGS = {
-    'Farsi': 'fa',
-    'Arabic': 'ar',
+    'فارسی': 'fa',
+    'العربية': 'ar',
     'English': 'en',
     'Spanish': 'es',
     'French': 'fr',
@@ -94,9 +94,8 @@ TRANSLATION_LANGS = {
     'Chinese': 'zh-cn',
     'Hindi': 'hi',
     'Urdu': 'ur',
-    'Hebrew': 'he',   # زبان عبری اضافه شد
+    'Hebrew': 'he',  # اضافه شده برای زبان عبری (اسرائیلی)
 }
-
 
 def get_keyboard(options):
     markup = ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
