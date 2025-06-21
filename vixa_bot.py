@@ -3,6 +3,8 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from deep_translator import GoogleTranslator
 import requests
 import time
+from flask import Flask
+import threading
 
 API_TOKEN = "7617108912:AAEKTluoS3PcFhHLTD6Xpp-ChfGjq6_MLug"
 
@@ -104,7 +106,6 @@ def get_keyboard(options):
 def start(message):
     user_data[message.chat.id] = {}
     markup = get_keyboard(LANGUAGE_OPTIONS.keys())
-    # پیام انتخاب زبان را به انگلیسی ارسال کن (چون هنوز انتخاب نشده)
     bot.send_message(message.chat.id, MESSAGES['choose_ui_lang']['en'], reply_markup=markup)
 
 @bot.message_handler(func=lambda m: m.chat.id in user_data and 'ui_lang' not in user_data[m.chat.id])
@@ -152,4 +153,18 @@ def translate_text(message):
     except Exception as e:
         bot.send_message(message.chat.id, MESSAGES['error_translation'][lang].format(str(e)))
 
+# ساخت وب‌سرور ساده Flask برای جلوگیری از خوابیدن برنامه روی Render
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "I'm alive!", 200
+
+def run_flask():
+    app.run(host='0.0.0.0', port=5000)
+
+# اجرای وب‌سرور در ترد جداگانه
+threading.Thread(target=run_flask).start()
+
+# اجرای ربات تلگرام با polling
 bot.polling(none_stop=True)
