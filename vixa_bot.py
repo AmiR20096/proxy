@@ -5,12 +5,11 @@ import requests
 import threading
 from flask import Flask
 
-API_TOKEN = "7233257940:AAGUhJz2HfVggaJF84prMsfBKSJ5fIsEdnI"
+token = "7233257940:AAGUhJz2HfVggaJF84prMsfBKSJ5fIsEdnI"
+url = f"https://api.telegram.org/bot{token}/deleteWebhook"
+r = requests.get(url)
+print(r.text)
 
-# حذف وبهوک قبلی (برای جلوگیری از خطای 409)
-def delete_webhook():
-    url = f"https://api.telegram.org/bot{API_TOKEN}/deleteWebhook"
-    try:
         r = requests.get(url)
         print("Webhook delete response:", r.json())
     except Exception as e:
