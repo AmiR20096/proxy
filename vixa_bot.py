@@ -2,11 +2,10 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from deep_translator import GoogleTranslator
 import requests
+import time
 
 API_TOKEN = "7617108912:AAEKTluoS3PcFhHLTD6Xpp-ChfGjq6_MLug"
-bot = telebot.TeleBot(API_TOKEN)
 
-# حذف وبهوک قبل از شروع برای جلوگیری از ارور 409
 def delete_webhook():
     url = f"https://api.telegram.org/bot{API_TOKEN}/deleteWebhook"
     try:
@@ -15,11 +14,14 @@ def delete_webhook():
     except Exception as e:
         print("⚠️ Couldn't delete webhook:", e)
 
+# حذف وبهوک قبل از ساخت ربات
 delete_webhook()
+time.sleep(1)  # کمی صبر کن تا وبهوک کامل حذف شود
+
+bot = telebot.TeleBot(API_TOKEN)
 
 user_data = {}
 
-# پیام‌ها به ۳ زبان (fa, ar, en)
 MESSAGES = {
     'choose_ui_lang': {
         'fa': "🌐 لطفاً زبان رابط کاربری را انتخاب کن:",
@@ -74,7 +76,6 @@ LANGUAGE_OPTIONS = {
     'English (English)': 'en',
 }
 
-# لیست ۱۵ زبان برای ترجمه
 TRANSLATION_LANGS = {
     'فارسی': 'fa',
     'العربية': 'ar',
@@ -103,6 +104,7 @@ def get_keyboard(options):
 def start(message):
     user_data[message.chat.id] = {}
     markup = get_keyboard(LANGUAGE_OPTIONS.keys())
+    # پیام انتخاب زبان را به انگلیسی ارسال کن (چون هنوز انتخاب نشده)
     bot.send_message(message.chat.id, MESSAGES['choose_ui_lang']['en'], reply_markup=markup)
 
 @bot.message_handler(func=lambda m: m.chat.id in user_data and 'ui_lang' not in user_data[m.chat.id])
@@ -150,4 +152,4 @@ def translate_text(message):
     except Exception as e:
         bot.send_message(message.chat.id, MESSAGES['error_translation'][lang].format(str(e)))
 
-bot.infinity_polling()
+bot.polling(none_stop=True)
