@@ -3,7 +3,7 @@ import requests
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from deep_translator import GoogleTranslator
 
-API_TOKEN = '7898327343:AAHfKAfWghG7c8Kn8DDSz3ouWdbblLx7_QY'
+API_TOKEN = '7617108912:AAEKTluoS3PcFhHLTD6Xpp-ChfGjq6_MLug'
 bot = telebot.TeleBot(API_TOKEN)
 
 # قبل از اجرای ربات، وبهوک رو حذف می‌کنیم (جلوگیری از ارور 409)
