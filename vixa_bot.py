@@ -2,27 +2,27 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from deep_translator import GoogleTranslator
 import requests
-import threading
+import time
 from flask import Flask
+import threading
 
-token = "7233257940:AAGUhJz2HfVggaJF84prMsfBKSJ5fIsEdnI"
-url = f"https://api.telegram.org/bot{token}/deleteWebhook"
-r = requests.get(url)
-print(r.text)
+API_TOKEN = "7233257940:AAGUhJz2HfVggaJF84prMsfBKSJ5fIsEdnI"
 
-        r = requests.get(url)
-        print("Webhook delete response:", r.json())
+# حذف وبهوک برای جلوگیری از خطای 409
+def delete_webhook():
+    url = f"https://api.telegram.org/bot{API_TOKEN}/deleteWebhook"
+    try:
+        response = requests.get(url)
+        print("Webhook delete response:", response.text)
     except Exception as e:
-        print("Webhook delete failed:", e)
+        print("Couldn't delete webhook:", e)
 
 delete_webhook()
+time.sleep(1)
 
 bot = telebot.TeleBot(API_TOKEN)
-app = Flask(__name__)
-
 user_data = {}
 
-# پیام‌ها به چند زبان
 MESSAGES = {
     'choose_ui_lang': {
         'fa': "🌐 لطفاً زبان رابط کاربری را انتخاب کن:",
@@ -55,9 +55,9 @@ MESSAGES = {
         'en': "✍️ Please send the text you want to translate:"
     },
     'translation_done': {
-        'fa': "🎉✅ ترجمه انجام شد! از ربات استفاده کن و لذت ببر! 🌍",
-        'ar': "🎉✅ تمت الترجمة! استمتع باستخدام البوت! 🌍",
-        'en': "🎉✅ Translation done! Enjoy using the bot! 🌍"
+        'fa': "✅ ترجمه انجام شد!",
+        'ar': "✅ تمت الترجمة!",
+        'en': "✅ Translation done!"
     },
     'error_translation': {
         'fa': "⚠️ خطا در ترجمه: {}",
@@ -65,35 +65,27 @@ MESSAGES = {
         'en': "⚠️ Translation error: {}"
     },
     'goodbye': {
-        'fa': "👋 خداحافظ! به زودی دوباره بیای!",
-        'ar': "👋 وداعاً! نأمل أن تعود قريباً!",
-        'en': "👋 Goodbye! Hope to see you again soon!"
+        'fa': "👋 خداحافظ!",
+        'ar': "👋 وداعاً!",
+        'en': "👋 Goodbye!"
     }
 }
 
 LANGUAGE_OPTIONS = {
-    'فارسی': 'fa',
-    'العربية': 'ar',
-    'English': 'en'
+    'فارسی (Iran)': 'fa',
+    'العربية (Arabic)': 'ar',
+    'English (English)': 'en'
 }
 
 TRANSLATION_LANGS = {
     'فارسی': 'fa',
     'العربية': 'ar',
     'English': 'en',
-    'Spanish': 'es',
-    'French': 'fr',
-    'German': 'de',
-    'Italian': 'it',
-    'Portuguese': 'pt',
-    'Russian': 'ru',
-    'Turkish': 'tr',
-    'Japanese': 'ja',
-    'Korean': 'ko',
-    'Chinese': 'zh-cn',
-    'Hindi': 'hi',
-    'Urdu': 'ur',
-    'Hebrew': 'he'
+    'Hebrew': 'iw',  # کد درست عبری در Google Translate => iw
+    'Spanish': 'es', 'French': 'fr', 'German': 'de', 'Italian': 'it',
+    'Portuguese': 'pt', 'Russian': 'ru', 'Turkish': 'tr',
+    'Japanese': 'ja', 'Korean': 'ko', 'Chinese': 'zh-cn',
+    'Hindi': 'hi', 'Urdu': 'ur'
 }
 
 def get_keyboard(options):
@@ -145,26 +137,25 @@ def translate_text(message):
     data = user_data[message.chat.id]
     lang = data['ui_lang']
     try:
-        translated = GoogleTranslator(source=data['src_lang'], target=data['dest_lang']).translate(message.text)
-        bot.send_message(message.chat.id, f"🔹 {translated}")
+        translated = GoogleTranslator(source=data['src_lang'], target=data['dest_lang']).translate(text=message.text)
+        bot.send_message(message.chat.id, f"\u2709\ufe0f {translated}")
         bot.send_message(message.chat.id, MESSAGES['translation_done'][lang])
         bot.send_message(message.chat.id, MESSAGES['goodbye'][lang])
         user_data.pop(message.chat.id)
     except Exception as e:
         bot.send_message(message.chat.id, MESSAGES['error_translation'][lang].format(str(e)))
 
-# ساخت وب‌سرور ساده Flask برای جلوگیری از خوابیدن برنامه (مثلاً روی Render)
+# Flask app to keep the bot alive
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "I'm alive!", 200
+    return "I'm alive!"
 
 def run_flask():
     app.run(host='0.0.0.0', port=5000)
 
-# اجرای وب‌سرور در ترد جداگانه
 threading.Thread(target=run_flask).start()
 
-# اجرای ربات با polling (دریافت پیام‌ها)
+# Start polling
 bot.polling(none_stop=True)
