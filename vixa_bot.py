@@ -94,7 +94,7 @@ TRANSLATION_LANGS = {
     'Chinese': 'zh-cn',
     'Hindi': 'hi',
     'Urdu': 'ur',
-    'Hebrew': 'he',  # اضافه شده برای زبان عبری (اسرائیلی)
+    'Hebrew': 'he',
 }
 
 def get_keyboard(options):
@@ -154,18 +154,19 @@ def translate_text(message):
     except Exception as e:
         bot.send_message(message.chat.id, MESSAGES['error_translation'][lang].format(str(e)))
 
-# ساخت وب‌سرور ساده Flask برای جلوگیری از خوابیدن برنامه روی Render
+from flask import Flask
+
 app = Flask(__name__)
 
 @app.route('/')
 def home():
     return "I'm alive!", 200
 
+import threading
+
 def run_flask():
     app.run(host='0.0.0.0', port=5000)
 
-# اجرای وب‌سرور در ترد جداگانه
 threading.Thread(target=run_flask).start()
 
-# اجرای ربات تلگرام با polling
 bot.polling(none_stop=True)
