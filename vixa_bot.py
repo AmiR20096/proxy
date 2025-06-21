@@ -79,21 +79,21 @@ LANGUAGE_OPTIONS = {
 }
 
 TRANSLATION_LANGS = {
-    'فارسی': 'fa',
-    'العربية': 'ar',
+    'Farsi': 'fa',
+    'Arabic': 'ar',
     'English': 'en',
-    'Spain': 'es',
-    'France': 'fr',
+    'Spanish': 'es',
+    'French': 'fr',
     'German': 'de',
-    'itly': 'it',
-    'portugal': 'pt',
-    'russia': 'ru',
-    'Turkiye': 'tr',
-    'japan': 'ja',
-    'korea': 'ko',
-    'chaina': 'zh-cn',
-    'india': 'hi',
-    'اردو': 'ur',
+    'Italian': 'it',
+    'Portuguese': 'pt',
+    'Russian': 'ru',
+    'Turkish': 'tr',
+    'Japanese': 'ja',
+    'Korean': 'ko',
+    'Chinese': 'zh-cn',
+    'Hindi': 'hi',
+    'Urdu': 'ur',
 }
 
 def get_keyboard(options):
